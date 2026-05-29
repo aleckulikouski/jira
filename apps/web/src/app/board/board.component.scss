@@ -1,14 +1,44 @@
-.spacer { flex: 1 1 auto; }
+.spacer {
+  flex: 1 1 auto;
+}
 
-.board-container { padding: 16px; }
+.board-container {
+  padding: 16px;
+}
 
-h2 { margin-bottom: 16px; }
+h2 {
+  margin-bottom: 16px;
+}
+
+.loading,
+.error {
+  margin-bottom: 16px;
+  padding: 8px 16px;
+}
+
+.error {
+  color: #c62828;
+  background: #ffebee;
+  border-radius: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: #666;
+
+  p {
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+}
 
 .columns {
   display: flex;
   gap: 16px;
   align-items: flex-start;
   overflow-x: auto;
+  padding-bottom: 8px;
 }
 
 .column {
@@ -18,9 +48,56 @@ h2 { margin-bottom: 16px; }
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fafafa;
+
+  mat-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+
+    ::ng-deep .mat-mdc-card-header-text {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+.column-title {
+  cursor: pointer;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    border-bottom-color: #999;
+  }
+}
+
+.rename-input {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border: 2px solid #1976d2;
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
 }
 
 .placeholder {
   color: #999;
   font-style: italic;
+}
+
+.add-column-btn {
+  min-width: 200px;
+  height: 48px;
+  flex-shrink: 0;
+  align-self: flex-start;
 }

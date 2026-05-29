@@ -17,6 +17,15 @@ Explore the repo.
 
 Use /tdd to complete the task.
 
+# FRONTEND
+
+Components guidelines:
+ - located in separate folders each
+ - separate files for the html and styles
+ - change Detection Strategy set to OnPush
+ - all subscriptions should be cleaned up in a modern way using the `takeUntilDestroyed` with the `destroyRef` from `@angular/core`
+ - templates should use modern @ syntax
+
 # FEEDBACK LOOPS
 
 Before committing, run the feedback loops:

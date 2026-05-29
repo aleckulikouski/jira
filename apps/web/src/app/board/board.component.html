@@ -6,18 +6,76 @@
     <button mat-button (click)="auth.logout()">Logout</button>
   }
 </mat-toolbar>
+
 <div class="board-container">
-  <h2>{{ (project$ | async)?.name }}</h2>
-  <div class="columns">
-    @for (col of columns$ | async; track col.id) {
-      <mat-card class="column">
-        <mat-card-header>
-          <mat-card-title>{{ col.name }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <p class="placeholder">No tickets yet</p>
-        </mat-card-content>
-      </mat-card>
+  <h2>{{ (project.project$ | async)?.name }}</h2>
+
+  @if (board.loading$ | async) {
+    <div class="loading">Loading...</div>
+  }
+
+  @if (board.error$ | async; as error) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (board.columns$ | async; as columns) {
+    @if (columns.length === 0) {
+      <div class="empty-state">
+        <p>No columns yet. Create your first column to get started.</p>
+        @if (project.project$ | async; as project) {
+          <button mat-flat-button color="primary" (click)="openAddColumnDialog(project.id)">
+            Add Column
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="columns">
+        @for (col of columns; track col.id) {
+          <mat-card
+            class="column"
+            cdkDropList
+            [cdkDropListData]="col"
+            [id]="col.id"
+          >
+            <mat-card-header>
+              @if (editingColumnId === col.id) {
+                <input
+                  class="rename-input"
+                  [(ngModel)]="editName"
+                  (blur)="saveEdit(col)"
+                  (keyup.enter)="saveEdit(col)"
+                  (keyup.escape)="cancelEdit()"
+                />
+              } @else {
+                <mat-card-title (click)="startEdit(col)" class="column-title">
+                  {{ col.name }}
+                </mat-card-title>
+              }
+              <button
+                mat-icon-button
+                class="delete-btn"
+                (click)="confirmDelete(col)"
+                aria-label="Delete column"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="placeholder">No tickets yet</p>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        @if (project.project$ | async; as project) {
+          <button
+            mat-stroked-button
+            class="add-column-btn"
+            (click)="openAddColumnDialog(project.id)"
+          >
+            <mat-icon>add</mat-icon> Add column
+          </button>
+        }
+      </div>
     }
-  </div>
+  }
 </div>
