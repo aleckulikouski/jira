@@ -1,3 +1,12 @@
 import { Route } from '@angular/router';
+import { LoginComponent } from './auth/login.component';
+import { RegisterComponent } from './auth/register.component';
+import { BoardComponent } from './board/board.component';
+import { authGuard } from './core/guards/auth.guard';
 
-export const appRoutes: Route[] = [];
+export const appRoutes: Route[] = [
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  { path: 'board', component: BoardComponent, canActivate: [authGuard] },
+  { path: '', redirectTo: '/board', pathMatch: 'full' },
+];

@@ -1,0 +1,23 @@
+<mat-toolbar color="primary">
+  <span>Jira Clone</span>
+  <span class="spacer"></span>
+  @if (auth.user$ | async; as user) {
+    <span>{{ user.email }}</span>
+    <button mat-button (click)="auth.logout()">Logout</button>
+  }
+</mat-toolbar>
+<div class="board-container">
+  <h2>{{ (project$ | async)?.name }}</h2>
+  <div class="columns">
+    @for (col of columns$ | async; track col.id) {
+      <mat-card class="column">
+        <mat-card-header>
+          <mat-card-title>{{ col.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="placeholder">No tickets yet</p>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</div>

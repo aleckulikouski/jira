@@ -26,6 +26,8 @@ Before committing, run the feedback loops:
 
 # THE ISSUE
 
+If the task is complete, start BE and FE so I can check the implementation.
+
 If the task is complete, move the issue file to `issues/done/`.
 
 If the task is not complete, add a note to the issue file with what was done.

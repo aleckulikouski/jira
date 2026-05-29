@@ -1,0 +1,26 @@
+.spacer { flex: 1 1 auto; }
+
+.board-container { padding: 16px; }
+
+h2 { margin-bottom: 16px; }
+
+.columns {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+.column {
+  min-width: 250px;
+  max-width: 300px;
+  flex-shrink: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.placeholder {
+  color: #999;
+  font-style: italic;
+}
