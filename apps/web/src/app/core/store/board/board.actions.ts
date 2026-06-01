@@ -1,5 +1,5 @@
 import { createActionGroup, props } from '@ngrx/store';
-import { BoardColumn } from '@org/shared-types';
+import { BoardColumn, Ticket } from '@org/shared-types';
 
 export const BoardActions = createActionGroup({
   source: 'Board',
@@ -19,5 +19,13 @@ export const BoardActions = createActionGroup({
     'Delete Column': props<{ id: string }>(),
     'Delete Column Success': props<{ id: string }>(),
     'Delete Column Failure': props<{ error: string }>(),
+
+    'Load Tickets': props<{ columnId: string }>(),
+    'Load Tickets Success': props<{ columnId: string; tickets: Ticket[] }>(),
+    'Load Tickets Failure': props<{ error: string }>(),
+
+    'Add Ticket': props<{ columnId: string; title: string; description?: string; tempId: string }>(),
+    'Add Ticket Success': props<{ ticket: Ticket; tempId: string }>(),
+    'Add Ticket Failure': props<{ tempId: string; error: string }>(),
   },
 });

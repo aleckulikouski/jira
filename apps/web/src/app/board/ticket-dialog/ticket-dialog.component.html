@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>Create Ticket</h2>
+
+<mat-dialog-content>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Title</mat-label>
+    <input matInput [(ngModel)]="title" placeholder="Ticket title" required />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Description</mat-label>
+    <textarea matInput [(ngModel)]="description" placeholder="Optional description" rows="3"></textarea>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Column</mat-label>
+    <mat-select [(ngModel)]="columnId">
+      @for (col of data.columns; track col.id) {
+        <mat-option [value]="col.id">{{ col.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="!title.trim() || !columnId">
+    Create
+  </button>
+</mat-dialog-actions>

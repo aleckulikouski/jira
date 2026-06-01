@@ -101,3 +101,19 @@ h2 {
   flex-shrink: 0;
   align-self: flex-start;
 }
+
+.ticket-card {
+  margin-bottom: 8px;
+
+  mat-card-content {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+}

@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, map, mergeMap, of, switchMap } from 'rxjs';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
 
@@ -61,6 +61,38 @@ export const deleteColumn$ = createEffect(
           map(() => BoardActions.deleteColumnSuccess({ id })),
           catchError((err) =>
             of(BoardActions.deleteColumnFailure({ error: err.error?.message ?? 'Failed to delete column' })),
+          ),
+        ),
+      ),
+    ),
+  { functional: true },
+);
+
+export const loadTickets$ = createEffect(
+  (actions$ = inject(Actions), boardService = inject(BoardService)) =>
+    actions$.pipe(
+      ofType(BoardActions.loadTickets),
+      mergeMap(({ columnId }) =>
+        boardService.getTickets(columnId).pipe(
+          map((tickets) => BoardActions.loadTicketsSuccess({ columnId, tickets })),
+          catchError((err) =>
+            of(BoardActions.loadTicketsFailure({ error: err.error?.message ?? 'Failed to load tickets' })),
+          ),
+        ),
+      ),
+    ),
+  { functional: true },
+);
+
+export const addTicket$ = createEffect(
+  (actions$ = inject(Actions), boardService = inject(BoardService)) =>
+    actions$.pipe(
+      ofType(BoardActions.addTicket),
+      mergeMap(({ columnId, title, description, tempId }) =>
+        boardService.createTicket(columnId, { title, description }).pipe(
+          map((ticket) => BoardActions.addTicketSuccess({ ticket, tempId })),
+          catchError((err) =>
+            of(BoardActions.addTicketFailure({ tempId, error: err.error?.message ?? 'Failed to create ticket' })),
           ),
         ),
       ),

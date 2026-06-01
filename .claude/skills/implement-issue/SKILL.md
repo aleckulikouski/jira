@@ -25,6 +25,7 @@ Components guidelines:
  - change Detection Strategy set to OnPush
  - all subscriptions should be cleaned up in a modern way using the `takeUntilDestroyed` with the `destroyRef` from `@angular/core`
  - templates should use modern @ syntax
+ - use /angular-developer skill for Angular specific tasks
 
 # FEEDBACK LOOPS
 
@@ -32,6 +33,7 @@ Before committing, run the feedback loops:
 
 - `npm run test` to run the tests
 - `npm run typecheck` to run the type checker
+- launch the app with `chrome-devtools` MCP and check the implementation, check the console for errors and warnings, and check the network tab for any failed requests
 
 # THE ISSUE
 

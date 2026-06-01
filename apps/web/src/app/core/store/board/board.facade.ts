@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { BoardActions } from './board.actions';
-import { selectColumns, selectBoardLoading, selectBoardError } from './board.selectors';
+import { selectColumns, selectBoardLoading, selectBoardError, selectTicketsByColumn } from './board.selectors';
 
 @Injectable({ providedIn: 'root' })
 export class BoardFacade {
@@ -25,5 +25,17 @@ export class BoardFacade {
 
   deleteColumn(id: string) {
     this.store.dispatch(BoardActions.deleteColumn({ id }));
+  }
+
+  loadTickets(columnId: string) {
+    this.store.dispatch(BoardActions.loadTickets({ columnId }));
+  }
+
+  addTicket(columnId: string, title: string, description: string | undefined, tempId: string) {
+    this.store.dispatch(BoardActions.addTicket({ columnId, title, description, tempId }));
+  }
+
+  ticketsByColumn(columnId: string) {
+    return this.store.select(selectTicketsByColumn(columnId));
   }
 }

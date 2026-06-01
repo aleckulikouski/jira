@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BoardColumn } from '@org/shared-types';
+import { BoardColumn, Ticket } from '@org/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
@@ -39,5 +39,20 @@ export class BoardService {
     return this.http.delete(`${this.base}/columns/${id}`, {
       headers: this.headers(),
     });
+  }
+
+  getTickets(columnId: string) {
+    return this.http.get<Ticket[]>(
+      `${this.base}/columns/${columnId}/tickets`,
+      { headers: this.headers() },
+    );
+  }
+
+  createTicket(columnId: string, data: { title: string; description?: string }) {
+    return this.http.post<Ticket>(
+      `${this.base}/columns/${columnId}/tickets`,
+      data,
+      { headers: this.headers() },
+    );
   }
 }

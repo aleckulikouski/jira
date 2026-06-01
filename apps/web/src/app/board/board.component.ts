@@ -9,13 +9,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { CdkDropList } from '@angular/cdk/drag-drop';
-import { filter } from 'rxjs';
+import { filter, Observable } from 'rxjs';
 import { AuthFacade } from '../core/store/auth.facade';
 import { BoardFacade } from '../core/store/board/board.facade';
 import { ProjectFacade } from '../core/store/project/project.facade';
 import { AddColumnDialogComponent } from './add-column-dialog/add-column-dialog.component';
 import { DeleteConfirmDialogComponent } from './delete-confirm-dialog/delete-confirm-dialog.component';
-import { BoardColumn } from '@org/shared-types';
+import { TicketDialogComponent } from './ticket-dialog/ticket-dialog.component';
+import { BoardColumn, Ticket } from '@org/shared-types';
 
 @Component({
   selector: 'app-board',
@@ -42,6 +43,9 @@ export class BoardComponent implements OnInit {
   editingColumnId: string | null = null;
   editName = '';
 
+  private readonly ticketSelectors = new Map<string, Observable<Ticket[]>>();
+  private loaded = false;
+
   constructor() {
     this.project.project$.pipe(
       filter((p) => p !== null),
@@ -49,10 +53,25 @@ export class BoardComponent implements OnInit {
     ).subscribe((p) => {
       this.board.loadColumns(p.id);
     });
+
+    this.board.columns$.pipe(
+      filter((cols) => !this.loaded && cols.length > 0),
+      takeUntilDestroyed(),
+    ).subscribe((cols) => {
+      this.loaded = true;
+      cols.forEach((c) => this.board.loadTickets(c.id));
+    });
   }
 
   ngOnInit() {
     this.project.loadProject();
+  }
+
+  ticketsFor(columnId: string): Observable<Ticket[]> {
+    if (!this.ticketSelectors.has(columnId)) {
+      this.ticketSelectors.set(columnId, this.board.ticketsByColumn(columnId));
+    }
+    return this.ticketSelectors.get(columnId)!;
   }
 
   startEdit(column: BoardColumn) {
@@ -81,6 +100,19 @@ export class BoardComponent implements OnInit {
     });
   }
 
+  openTicketDialog(columns: BoardColumn[]) {
+    const ref = this.dialog.open(TicketDialogComponent, {
+      width: '480px',
+      data: { columns },
+    });
+    ref.afterClosed().subscribe((result: { columnId: string; title: string; description?: string } | undefined) => {
+      if (result) {
+        const tempId = crypto.randomUUID();
+        this.board.addTicket(result.columnId, result.title, result.description, tempId);
+      }
+    });
+  }
+
   confirmDelete(column: BoardColumn) {
     const ref = this.dialog.open(DeleteConfirmDialogComponent, {
       width: '400px',
@@ -95,5 +127,9 @@ export class BoardComponent implements OnInit {
 
   trackByColumnId(_: number, col: BoardColumn) {
     return col.id;
+  }
+
+  trackByTicketId(_: number, ticket: Ticket) {
+    return ticket.id;
   }
 }

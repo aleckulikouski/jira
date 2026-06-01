@@ -61,7 +61,17 @@
               </button>
             </mat-card-header>
             <mat-card-content>
-              <p class="placeholder">No tickets yet</p>
+              @if (ticketsFor(col.id) | async; as colTickets) {
+                @if (colTickets.length === 0) {
+                  <p class="placeholder">No tickets yet</p>
+                } @else {
+                  @for (ticket of colTickets; track trackByTicketId($index, ticket)) {
+                    <mat-card class="ticket-card" appearance="outlined">
+                      <mat-card-content>{{ ticket.title }}</mat-card-content>
+                    </mat-card>
+                  }
+                }
+              }
             </mat-card-content>
           </mat-card>
         }
@@ -77,5 +87,15 @@
         }
       </div>
     }
+
+    <button
+      mat-fab
+      color="primary"
+      class="fab"
+      (click)="openTicketDialog(columns)"
+      aria-label="Create ticket"
+    >
+      <mat-icon>add</mat-icon>
+    </button>
   }
 </div>
