@@ -2,7 +2,12 @@
   "name": "@org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "bash scripts/start-dev.sh",
+    "dev": "bash scripts/start-dev.sh",
+    "stop": "bash scripts/stop-dev.sh",
+    "stop:all": "bash scripts/stop-dev.sh --db"
+  },
   "private": true,
   "devDependencies": {
     "@angular-devkit/core": "~21.2.0",
