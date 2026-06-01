@@ -5,3 +5,11 @@
 mat-form-field {
   display: block;
 }
+
+mat-dialog-actions.edit-actions {
+  justify-content: space-between;
+
+  .delete-btn {
+    margin-right: auto;
+  }
+}

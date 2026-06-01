@@ -10,10 +10,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { CdkDropList } from '@angular/cdk/drag-drop';
 import { filter, Observable } from 'rxjs';
-import { AuthFacade } from '../core/store/auth.facade';
+import { AuthFacade } from '../core/store/auth/auth.facade';
 import { BoardFacade } from '../core/store/board/board.facade';
 import { ProjectFacade } from '../core/store/project/project.facade';
 import { AddColumnDialogComponent } from './add-column-dialog/add-column-dialog.component';
+import type { DeleteConfirmData } from '../core/interfaces/delete-confirm.interface';
+import type { TicketDialogResult } from '../core/interfaces/ticket-dialog.interface';
 import { DeleteConfirmDialogComponent } from './delete-confirm-dialog/delete-confirm-dialog.component';
 import { TicketDialogComponent } from './ticket-dialog/ticket-dialog.component';
 import { BoardColumn, Ticket } from '@org/shared-types';
@@ -100,23 +102,50 @@ export class BoardComponent implements OnInit {
     });
   }
 
-  openTicketDialog(columns: BoardColumn[]) {
+  openCreateTicketDialog(columns: BoardColumn[]) {
     const ref = this.dialog.open(TicketDialogComponent, {
       width: '480px',
       data: { columns },
     });
-    ref.afterClosed().subscribe((result: { columnId: string; title: string; description?: string } | undefined) => {
-      if (result) {
+    ref.afterClosed().subscribe((result: TicketDialogResult | undefined) => {
+      if (result?.action === 'save' && result.columnId) {
         const tempId = crypto.randomUUID();
-        this.board.addTicket(result.columnId, result.title, result.description, tempId);
+        this.board.addTicket(result.columnId, result.title!, result.description, tempId);
+      }
+    });
+  }
+
+  openEditTicketDialog(ticket: Ticket, columns: BoardColumn[]) {
+    const ref = this.dialog.open(TicketDialogComponent, {
+      width: '480px',
+      data: { columns, ticket },
+    });
+    ref.afterClosed().subscribe((result: TicketDialogResult | undefined) => {
+      if (!result) return;
+
+      if (result.action === 'save' && result.columnId) {
+        const data: { title?: string; description?: string; columnId?: string } = {};
+        if (result.title !== ticket.title) data.title = result.title;
+        if ((result.description ?? '') !== (ticket.description ?? '')) data.description = result.description ?? '';
+        if (result.columnId !== ticket.columnId) data.columnId = result.columnId;
+
+        if (Object.keys(data).length > 0) {
+          this.board.updateTicket(ticket.id, data);
+        }
+      } else if (result.action === 'delete') {
+        this.board.deleteTicket(ticket.id);
       }
     });
   }
 
   confirmDelete(column: BoardColumn) {
+    const data: DeleteConfirmData = {
+      title: 'Delete Column',
+      message: `Delete "${column.name}" and all its tickets? This cannot be undone.`,
+    };
     const ref = this.dialog.open(DeleteConfirmDialogComponent, {
       width: '400px',
-      data: { columnName: column.name },
+      data,
     });
     ref.afterClosed().subscribe((confirmed: boolean) => {
       if (confirmed) {

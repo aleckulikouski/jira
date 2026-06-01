@@ -35,6 +35,14 @@ export class BoardFacade {
     this.store.dispatch(BoardActions.addTicket({ columnId, title, description, tempId }));
   }
 
+  updateTicket(id: string, data: { title?: string; description?: string; columnId?: string }) {
+    this.store.dispatch(BoardActions.updateTicket({ id, data }));
+  }
+
+  deleteTicket(id: string) {
+    this.store.dispatch(BoardActions.deleteTicket({ id }));
+  }
+
   ticketsByColumn(columnId: string) {
     return this.store.select(selectTicketsByColumn(columnId));
   }

@@ -55,4 +55,18 @@ export class BoardService {
       { headers: this.headers() },
     );
   }
+
+  updateTicket(id: string, data: { title?: string; description?: string; columnId?: string }) {
+    return this.http.patch<Ticket>(
+      `${this.base}/tickets/${id}`,
+      data,
+      { headers: this.headers() },
+    );
+  }
+
+  deleteTicket(id: string) {
+    return this.http.delete(`${this.base}/tickets/${id}`, {
+      headers: this.headers(),
+    });
+  }
 }

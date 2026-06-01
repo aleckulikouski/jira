@@ -1,5 +1,5 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { ProjectState } from './project.reducer';
+import type { ProjectState } from './project.reducer';
 
 export const selectProjectState = createFeatureSelector<ProjectState>('project');
 

@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { Project } from '@org/shared-types';
+import type { Project } from '@org/shared-types';
 import { ProjectActions } from './project.actions';
 
 export interface ProjectState {

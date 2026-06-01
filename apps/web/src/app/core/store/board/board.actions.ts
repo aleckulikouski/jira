@@ -27,5 +27,15 @@ export const BoardActions = createActionGroup({
     'Add Ticket': props<{ columnId: string; title: string; description?: string; tempId: string }>(),
     'Add Ticket Success': props<{ ticket: Ticket; tempId: string }>(),
     'Add Ticket Failure': props<{ tempId: string; error: string }>(),
+
+    'Update Ticket': props<{ id: string; data: { title?: string; description?: string; columnId?: string } }>(),
+    'Update Ticket Success': props<{ ticket: Ticket }>(),
+    'Update Ticket Failure': props<{ error: string }>(),
+
+    'Delete Ticket': props<{ id: string }>(),
+    'Delete Ticket Success': props<{ id: string }>(),
+    'Delete Ticket Failure': props<{ error: string }>(),
+
+    'Show Error': props<{ message: string }>(),
   },
 });

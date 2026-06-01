@@ -33,7 +33,7 @@ Before committing, run the feedback loops:
 
 - `npm run test` to run the tests
 - `npm run typecheck` to run the type checker
-- launch the app with `chrome-devtools` MCP and check the implementation, check the console for errors and warnings, and check the network tab for any failed requests
+- launch the app, with help of `chrome-devtools` MCP check the implementation, check the console for errors and warnings, and check the network tab for any failed requests
 
 # THE ISSUE
 

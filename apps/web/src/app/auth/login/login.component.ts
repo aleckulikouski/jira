@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { RouterLink } from '@angular/router';
-import { AuthFacade } from '../../core/store/auth.facade';
+import { AuthFacade } from '../../core/store/auth/auth.facade';
 
 @Component({
   selector: 'app-login',

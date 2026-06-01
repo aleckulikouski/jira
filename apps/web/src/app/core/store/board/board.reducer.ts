@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { BoardColumn, Ticket } from '@org/shared-types';
+import type { BoardColumn, Ticket } from '@org/shared-types';
 import { BoardActions } from './board.actions';
 
 export interface BoardState {
@@ -115,6 +115,32 @@ export const boardReducer = createReducer(
   on(BoardActions.addTicketFailure, (state, { tempId, error }) => ({
     ...state,
     tickets: state.tickets.filter((t) => t.id !== tempId),
+    error,
+  })),
+
+  on(BoardActions.updateTicket, (state) => ({
+    ...state,
+    error: null,
+  })),
+  on(BoardActions.updateTicketSuccess, (state, { ticket }) => ({
+    ...state,
+    tickets: state.tickets.map((t) => (t.id === ticket.id ? ticket : t)),
+  })),
+  on(BoardActions.updateTicketFailure, (state, { error }) => ({
+    ...state,
+    error,
+  })),
+
+  on(BoardActions.deleteTicket, (state) => ({
+    ...state,
+    error: null,
+  })),
+  on(BoardActions.deleteTicketSuccess, (state, { id }) => ({
+    ...state,
+    tickets: state.tickets.filter((t) => t.id !== id),
+  })),
+  on(BoardActions.deleteTicketFailure, (state, { error }) => ({
+    ...state,
     error,
   })),
 );
