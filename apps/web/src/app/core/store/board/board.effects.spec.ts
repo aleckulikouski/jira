@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
-import { updateTicket$, deleteTicket$, showError$ } from './board.effects';
+import { updateTicket$, deleteTicket$, moveTicket$, showError$ } from './board.effects';
 import { Actions } from '@ngrx/effects';
 import { Ticket } from '@org/shared-types';
 
@@ -75,6 +75,41 @@ describe('Board Effects', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual(BoardActions.deleteTicketFailure({ error: 'Not found' }));
       expect(result[1]).toEqual(BoardActions.showError({ message: 'Not found' }));
+    });
+  });
+
+  describe('moveTicket$', () => {
+    const previous = makeTicket({ id: 't-1', columnId: 'c-1', position: 0 });
+
+    it('should call boardService.updateTicket with columnId and position and return success', () => {
+      const ticket = makeTicket({ id: 't-1', columnId: 'c-2', position: 3 });
+      const boardService = { updateTicket: vi.fn().mockReturnValue(of(ticket)) } as unknown as BoardService;
+      const actions$ = new Actions(
+        of(BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 3, previous })),
+      );
+
+      const result: Action[] = [];
+      moveTicket$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(BoardActions.moveTicketSuccess({ ticket }));
+      expect(boardService.updateTicket).toHaveBeenCalledWith('t-1', { columnId: 'c-2', position: 3 });
+    });
+
+    it('should return failure with previous ticket and show error on API error', () => {
+      const boardService = {
+        updateTicket: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'Server error' } }))),
+      } as unknown as BoardService;
+      const actions$ = new Actions(
+        of(BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 3, previous })),
+      );
+
+      const result: Action[] = [];
+      moveTicket$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.moveTicketFailure({ ticket: previous, error: 'Server error' }));
+      expect(result[1]).toEqual(BoardActions.showError({ message: 'Server error' }));
     });
   });
 

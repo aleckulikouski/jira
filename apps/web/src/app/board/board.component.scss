@@ -4,16 +4,22 @@
 
 .board-container {
   padding: 16px;
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 h2 {
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .loading,
 .error {
   margin-bottom: 16px;
   padding: 8px 16px;
+  flex-shrink: 0;
 }
 
 .error {
@@ -26,6 +32,7 @@ h2 {
   text-align: center;
   padding: 48px 16px;
   color: #666;
+  flex: 1;
 
   p {
     margin-bottom: 16px;
@@ -36,9 +43,11 @@ h2 {
 .columns {
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
   overflow-x: auto;
   padding-bottom: 8px;
+  flex: 1;
+  min-height: 0;
 }
 
 .column {
@@ -48,17 +57,27 @@ h2 {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   mat-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: relative;
+    flex-shrink: 0;
 
     ::ng-deep .mat-mdc-card-header-text {
       flex: 1;
       min-width: 0;
     }
+  }
+
+  mat-card-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
   }
 }
 
@@ -90,16 +109,10 @@ h2 {
   transform: translateY(-50%);
 }
 
-.placeholder {
-  color: #999;
-  font-style: italic;
-}
-
 .add-column-btn {
   min-width: 200px;
   height: 48px;
   flex-shrink: 0;
-  align-self: flex-start;
 }
 
 .ticket-card {
@@ -114,6 +127,25 @@ h2 {
     padding: 8px 12px;
     font-size: 14px;
   }
+}
+
+.drag-placeholder {
+  border: 2px dashed #1976d2 !important;
+  background: rgba(25, 118, 210, 0.05) !important;
+  min-height: 48px;
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  opacity: 0.9;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.column .cdk-drop-list-dragging .ticket-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .fab {

@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { BoardActions } from './board.actions';
-import { selectColumns, selectBoardLoading, selectBoardError, selectTicketsByColumn } from './board.selectors';
+import { selectColumns, selectBoardLoading, selectBoardError, selectTicketsByColumn, selectTickets } from './board.selectors';
+import type { Ticket } from '@org/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class BoardFacade {
@@ -43,7 +44,15 @@ export class BoardFacade {
     this.store.dispatch(BoardActions.deleteTicket({ id }));
   }
 
+  moveTicket(id: string, columnId: string, position: number, previous: Ticket) {
+    this.store.dispatch(BoardActions.moveTicket({ id, columnId, position, previous }));
+  }
+
   ticketsByColumn(columnId: string) {
     return this.store.select(selectTicketsByColumn(columnId));
+  }
+
+  get tickets$() {
+    return this.store.select(selectTickets);
   }
 }

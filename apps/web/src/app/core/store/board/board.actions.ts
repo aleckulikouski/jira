@@ -36,6 +36,10 @@ export const BoardActions = createActionGroup({
     'Delete Ticket Success': props<{ id: string }>(),
     'Delete Ticket Failure': props<{ error: string }>(),
 
+    'Move Ticket': props<{ id: string; columnId: string; position: number; previous: Ticket }>(),
+    'Move Ticket Success': props<{ ticket: Ticket }>(),
+    'Move Ticket Failure': props<{ ticket: Ticket; error: string }>(),
+
     'Show Error': props<{ message: string }>(),
   },
 });

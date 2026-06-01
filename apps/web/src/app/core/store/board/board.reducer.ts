@@ -143,4 +143,21 @@ export const boardReducer = createReducer(
     ...state,
     error,
   })),
+
+  on(BoardActions.moveTicket, (state, { id, columnId, position }) => ({
+    ...state,
+    error: null,
+    tickets: state.tickets.map((t) =>
+      t.id === id ? { ...t, columnId, position } : t,
+    ),
+  })),
+  on(BoardActions.moveTicketSuccess, (state, { ticket }) => ({
+    ...state,
+    tickets: state.tickets.map((t) => (t.id === ticket.id ? ticket : t)),
+  })),
+  on(BoardActions.moveTicketFailure, (state, { ticket, error }) => ({
+    ...state,
+    tickets: state.tickets.map((t) => (t.id === ticket.id ? { ...ticket } : t)),
+    error,
+  })),
 );

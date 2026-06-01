@@ -8,8 +8,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
-import { CdkDropList } from '@angular/cdk/drag-drop';
-import { filter, Observable } from 'rxjs';
+import { CdkDropList, CdkDrag, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { filter, Observable, take } from 'rxjs';
 import { AuthFacade } from '../core/store/auth/auth.facade';
 import { BoardFacade } from '../core/store/board/board.facade';
 import { ProjectFacade } from '../core/store/project/project.facade';
@@ -31,6 +31,8 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     MatIconModule,
     MatInputModule,
     CdkDropList,
+    CdkDrag,
+    CdkDragPlaceholder,
   ],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
@@ -44,6 +46,7 @@ export class BoardComponent implements OnInit {
 
   editingColumnId: string | null = null;
   editName = '';
+  columnDropListIds: string[] = [];
 
   private readonly ticketSelectors = new Map<string, Observable<Ticket[]>>();
   private loaded = false;
@@ -62,6 +65,10 @@ export class BoardComponent implements OnInit {
     ).subscribe((cols) => {
       this.loaded = true;
       cols.forEach((c) => this.board.loadTickets(c.id));
+    });
+
+    this.board.columns$.pipe(takeUntilDestroyed()).subscribe((cols) => {
+      this.columnDropListIds = cols.map((c) => c.id);
     });
   }
 
@@ -160,5 +167,73 @@ export class BoardComponent implements OnInit {
 
   trackByTicketId(_: number, ticket: Ticket) {
     return ticket.id;
+  }
+
+  onDrop(event: CdkDragDrop<BoardColumn, BoardColumn, Ticket>) {
+    const ticket = event.item.data;
+    const targetColumn = event.container.data;
+
+    // No-op: dropped in same position
+    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    // Get current tickets from store snapshot
+    let allTickets: Ticket[] = [];
+    this.board.tickets$.pipe(take(1)).subscribe((t) => (allTickets = t));
+
+    // Filter tickets in target column, excluding the dragged ticket
+    const targetTickets = allTickets
+      .filter((t) => t.columnId === targetColumn.id && t.id !== ticket.id)
+      .sort((a, b) => a.position - b.position);
+
+    // Determine drop index from the actual cursor position, since CDK's
+    // currentIndex can be unreliable when drag items are nested inside
+    // mat-card-content rather than being direct children of cdkDropList.
+    let dropIndex = targetTickets.length; // default: end of list
+    if (event.dropPoint && targetTickets.length > 0) {
+      const containerEl = event.container.element.nativeElement;
+      // Get all ticket card elements in the target column (excluding the placeholder)
+      const ticketElements = Array.from(
+        containerEl.querySelectorAll('.ticket-card[cdkDrag]:not(.cdk-drag-placeholder)'),
+      );
+      // Find the element under the cursor
+      const elAtPoint = document.elementFromPoint(event.dropPoint.x, event.dropPoint.y);
+      if (elAtPoint) {
+        const ticketEl = elAtPoint.closest('.ticket-card[cdkDrag]');
+        if (ticketEl) {
+          const idx = ticketElements.indexOf(ticketEl);
+          if (idx !== -1) dropIndex = idx;
+        } else {
+          // Dropped before all tickets — check if cursor is above the first ticket
+          const firstEl = ticketElements[0];
+          if (firstEl) {
+            const rect = firstEl.getBoundingClientRect();
+            if (event.dropPoint.y < rect.top + rect.height / 2) {
+              dropIndex = 0;
+            }
+          }
+        }
+      }
+    }
+
+    // Compute new position based on drop index
+    let newPosition: number;
+    if (targetTickets.length === 0 || dropIndex === 0) {
+      newPosition = targetTickets.length === 0 ? 1000 : targetTickets[0].position / 2;
+    } else if (dropIndex >= targetTickets.length) {
+      newPosition = targetTickets[targetTickets.length - 1].position + 1000;
+    } else {
+      newPosition =
+        (targetTickets[dropIndex - 1].position +
+          targetTickets[dropIndex].position) /
+        2;
+    }
+
+    // Store previous state for rollback
+    const previous: Ticket = { ...ticket };
+
+    // Dispatch optimistic move
+    this.board.moveTicket(ticket.id, targetColumn.id, newPosition, previous);
   }
 }

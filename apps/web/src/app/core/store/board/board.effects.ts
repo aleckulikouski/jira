@@ -141,6 +141,26 @@ export const deleteTicket$ = createEffect(
   { functional: true },
 );
 
+export const moveTicket$ = createEffect(
+  (actions$ = inject(Actions), boardService = inject(BoardService)) =>
+    actions$.pipe(
+      ofType(BoardActions.moveTicket),
+      mergeMap(({ id, columnId, position, previous }) =>
+        boardService.updateTicket(id, { columnId, position }).pipe(
+          map((ticket) => BoardActions.moveTicketSuccess({ ticket })),
+          catchError((err) => {
+            const msg = err.error?.message ?? 'Failed to move ticket';
+            return of(
+              BoardActions.moveTicketFailure({ ticket: previous, error: msg }),
+              BoardActions.showError({ message: msg }),
+            );
+          }),
+        ),
+      ),
+    ),
+  { functional: true },
+);
+
 export const showError$ = createEffect(
   (actions$ = inject(Actions), snackBar = inject(MatSnackBar)) =>
     actions$.pipe(

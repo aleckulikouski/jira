@@ -56,7 +56,7 @@ export class BoardService {
     );
   }
 
-  updateTicket(id: string, data: { title?: string; description?: string; columnId?: string }) {
+  updateTicket(id: string, data: { title?: string; description?: string; columnId?: string; position?: number }) {
     return this.http.patch<Ticket>(
       `${this.base}/tickets/${id}`,
       data,

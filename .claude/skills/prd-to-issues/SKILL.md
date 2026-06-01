@@ -53,7 +53,7 @@ Iterate until the user approves the breakdown.
 
 For each approved slice, write a markdown file in `issues/` using the naming pattern `issues/NNN-short-title.md` (e.g. `issues/001-add-user-auth.md`).
 
-Number issues starting from the next available number (check what files already exist in `issues/`).
+Number issues starting from the next available number (check what files already exist in `issues/done`).
 
 Create files in dependency order (blockers first) so you can reference real filenames in the "Blocked by" field.
 

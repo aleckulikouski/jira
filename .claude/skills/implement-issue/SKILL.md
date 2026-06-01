@@ -26,6 +26,7 @@ Components guidelines:
  - all subscriptions should be cleaned up in a modern way using the `takeUntilDestroyed` with the `destroyRef` from `@angular/core`
  - templates should use modern @ syntax
  - use /angular-developer skill for Angular specific tasks
+ - components interact with the store only via facades, and never directly
 
 # FEEDBACK LOOPS
 

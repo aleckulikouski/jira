@@ -128,4 +128,44 @@ describe('Board Reducer - Tickets', () => {
       expect(state.error).toBe('Delete failed');
     });
   });
+
+  describe('moveTicket', () => {
+    const previous = makeTicket({ id: 't-1', columnId: 'c-1', position: 0 });
+
+    it('should clear error and update ticket position/column optimistically', () => {
+      const state = boardReducer(
+        { ...initial, error: 'prev' },
+        BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 5, previous }),
+      );
+      expect(state.error).toBeNull();
+      const moved = state.tickets.find((t) => t.id === 't-1');
+      expect(moved!.columnId).toBe('c-2');
+      expect(moved!.position).toBe(5);
+      // Other tickets unchanged
+      expect(state.tickets.find((t) => t.id === 't-2')!.columnId).toBe('c-1');
+    });
+
+    it('should replace ticket with server data on moveTicketSuccess', () => {
+      const serverTicket = makeTicket({ id: 't-1', columnId: 'c-2', position: 3, title: 'Server Title' });
+      const state = boardReducer(initial, BoardActions.moveTicketSuccess({ ticket: serverTicket }));
+      const moved = state.tickets.find((t) => t.id === 't-1');
+      expect(moved!.columnId).toBe('c-2');
+      expect(moved!.position).toBe(3);
+      expect(moved!.title).toBe('Server Title');
+    });
+
+    it('should roll back ticket and set error on moveTicketFailure', () => {
+      // First apply optimistic move
+      let state = boardReducer(
+        initial,
+        BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 5, previous }),
+      );
+      // Then fail — rollback to previous state
+      state = boardReducer(state, BoardActions.moveTicketFailure({ ticket: previous, error: 'Move failed' }));
+      const rolledBack = state.tickets.find((t) => t.id === 't-1');
+      expect(rolledBack!.columnId).toBe('c-1');
+      expect(rolledBack!.position).toBe(0);
+      expect(state.error).toBe('Move failed');
+    });
+  });
 });

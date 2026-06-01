@@ -33,9 +33,6 @@
         @for (col of columns; track col.id) {
           <mat-card
             class="column"
-            cdkDropList
-            [cdkDropListData]="col"
-            [id]="col.id"
           >
             <mat-card-header>
               @if (editingColumnId === col.id) {
@@ -60,20 +57,29 @@
                 <mat-icon>delete</mat-icon>
               </button>
             </mat-card-header>
-            <mat-card-content>
+            <mat-card-content
+              cdkDropList
+              [cdkDropListData]="col"
+              [cdkDropListConnectedTo]="columnDropListIds"
+              [id]="col.id"
+              (cdkDropListDropped)="onDrop($event)"
+            >
               @if (ticketsFor(col.id) | async; as colTickets) {
-                @if (colTickets.length === 0) {
-                  <p class="placeholder">No tickets yet</p>
-                } @else {
-                  @for (ticket of colTickets; track trackByTicketId($index, ticket)) {
-                    <mat-card
-                      class="ticket-card"
-                      appearance="outlined"
-                      (click)="openEditTicketDialog(ticket, columns)"
-                    >
-                      <mat-card-content>{{ ticket.title }}</mat-card-content>
-                    </mat-card>
-                  }
+                @for (ticket of colTickets; track trackByTicketId($index, ticket)) {
+                  <mat-card
+                    class="ticket-card"
+                    appearance="outlined"
+                    cdkDrag
+                    [cdkDragData]="ticket"
+                    (click)="openEditTicketDialog(ticket, columns)"
+                  >
+                    <mat-card-content>{{ ticket.title }}</mat-card-content>
+                    <ng-template cdkDragPlaceholder>
+                      <mat-card class="ticket-card drag-placeholder" appearance="outlined">
+                        <mat-card-content>{{ ticket.title }}</mat-card-content>
+                      </mat-card>
+                    </ng-template>
+                  </mat-card>
                 }
               }
             </mat-card-content>
