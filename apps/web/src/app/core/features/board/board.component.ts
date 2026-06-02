@@ -4,18 +4,16 @@ import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { CdkDropList, CdkDrag, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { filter, Observable, take } from 'rxjs';
-import { AuthFacade } from '../core/store/auth/auth.facade';
-import { BoardFacade } from '../core/store/board/board.facade';
-import { ProjectFacade } from '../core/store/project/project.facade';
+import { BoardFacade } from '../../store/board/board.facade';
+import { ProjectFacade } from '../../store/project/project.facade';
 import { AddColumnDialogComponent } from './add-column-dialog/add-column-dialog.component';
-import type { DeleteConfirmData } from '../core/interfaces/delete-confirm.interface';
-import type { TicketDialogResult } from '../core/interfaces/ticket-dialog.interface';
+import type { DeleteConfirmData } from '../../interfaces/delete-confirm.interface';
+import type { TicketDialogResult } from '../../interfaces/ticket-dialog.interface';
 import { DeleteConfirmDialogComponent } from './delete-confirm-dialog/delete-confirm-dialog.component';
 import { TicketDialogComponent } from './ticket-dialog/ticket-dialog.component';
 import { BoardColumn, Ticket } from '@org/shared-types';
@@ -27,7 +25,6 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     FormsModule,
     MatCardModule,
     MatButtonModule,
-    MatToolbarModule,
     MatIconModule,
     MatInputModule,
     CdkDropList,
@@ -39,7 +36,6 @@ import { BoardColumn, Ticket } from '@org/shared-types';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BoardComponent implements OnInit {
-  readonly auth = inject(AuthFacade);
   readonly board = inject(BoardFacade);
   readonly project = inject(ProjectFacade);
   private readonly dialog = inject(MatDialog);

@@ -1,10 +1,6 @@
-.spacer {
-  flex: 1 1 auto;
-}
-
 .board-container {
   padding: 16px;
-  height: calc(100vh - 64px);
+  height: 100%;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;

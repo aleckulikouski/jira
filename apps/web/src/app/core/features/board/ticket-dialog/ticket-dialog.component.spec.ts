@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { TicketDialogComponent } from './ticket-dialog.component';
-import type { TicketDialogData } from '../../core/interfaces/ticket-dialog.interface';
+import type { TicketDialogData } from '../../../interfaces/ticket-dialog.interface';
 import { BoardColumn, Ticket } from '@org/shared-types';
 import { of } from 'rxjs';
 

@@ -6,7 +6,7 @@ import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angu
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import type { TicketDialogData, TicketDialogResult } from '../../core/interfaces/ticket-dialog.interface';
+import type { TicketDialogData, TicketDialogResult } from '../../../interfaces/ticket-dialog.interface';
 import { DeleteConfirmDialogComponent } from '../delete-confirm-dialog/delete-confirm-dialog.component';
 
 @Component({

@@ -1,3 +1,14 @@
+export interface User {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: User;
+}
+
 export interface Project {
   id: string;
   ownerId: string;

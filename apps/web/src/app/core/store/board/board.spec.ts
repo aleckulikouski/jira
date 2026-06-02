@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BoardActions } from './board.actions';
+import { AuthActions } from '../auth/auth.actions';
 import { boardReducer, BoardState } from './board.reducer';
 import { BoardColumn, Ticket } from '@org/shared-types';
 
@@ -166,6 +167,20 @@ describe('Board Reducer - Tickets', () => {
       expect(rolledBack!.columnId).toBe('c-1');
       expect(rolledBack!.position).toBe(0);
       expect(state.error).toBe('Move failed');
+    });
+  });
+
+  describe('logout', () => {
+    it('should reset board state on logout', () => {
+      const populated: BoardState = {
+        columns: [makeColumn()],
+        tickets: [makeTicket()],
+        loading: false,
+        error: null,
+      };
+      const state = boardReducer(populated, AuthActions.logout());
+      expect(state.columns).toEqual([]);
+      expect(state.tickets).toEqual([]);
     });
   });
 });

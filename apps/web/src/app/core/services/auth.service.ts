@@ -1,10 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-
-interface AuthResponse {
-  accessToken: string;
-  user: { id: string; email: string };
-}
+import type { AuthResponse } from '@org/shared-types';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

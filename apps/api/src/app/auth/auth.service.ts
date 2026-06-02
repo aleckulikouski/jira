@@ -8,6 +8,7 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import type { User } from '@org/shared-types';
 
 const DEFAULT_COLUMNS = [
   { name: 'To Do', order: 0 },
@@ -80,13 +81,14 @@ export class AuthService {
     return this.tokenFor(user);
   }
 
-  private tokenFor(user: { id: string; email: string }) {
+  private tokenFor(user: Pick<User, 'id' | 'email' | 'displayName'>) {
     const payload = { sub: user.id, email: user.email };
     return {
       accessToken: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
+        displayName: user.displayName,
       },
     };
   }

@@ -1,15 +1,16 @@
 import { createReducer, on } from '@ngrx/store';
 import { AuthActions } from './auth.actions';
 import { LocalStorageTokenStorage } from '../../tokens/local-storage-token-storage';
+import type { User } from '@org/shared-types';
 
 export interface AuthState {
-  user: { id: string; email: string } | null;
+  user: User | null;
   token: string | null;
   loading: boolean;
   error: string | null;
 }
 
-function loadUser(): { id: string; email: string } | null {
+function loadUser(): User | null {
   const raw = localStorage.getItem('user');
   if (!raw) return null;
   try {
@@ -35,7 +36,15 @@ export const authReducer = createReducer(
     error: null,
   })),
 
-  on(AuthActions.registerSuccess, AuthActions.loginSuccess, (state, { accessToken, user }) => ({
+  on(AuthActions.registerSuccess, (state, { accessToken, user }) => ({
+    ...state,
+    user,
+    token: accessToken,
+    loading: false,
+    error: null,
+  })),
+
+  on(AuthActions.loginSuccess, (state, { accessToken, user }) => ({
     ...state,
     user,
     token: accessToken,

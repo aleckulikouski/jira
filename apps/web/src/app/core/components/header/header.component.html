@@ -1,0 +1,28 @@
+<mat-toolbar color="primary" class="app-header">
+  <span class="brand">Jira Clone</span>
+  <span class="spacer"></span>
+
+  @if (auth.user$ | async; as user) {
+    <button
+      mat-button
+      class="user-menu-trigger"
+      [matMenuTriggerFor]="userMenu"
+      #trigger="matMenuTrigger"
+      aria-label="User menu"
+    >
+      {{ user.displayName || user.email }}
+      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <button mat-menu-item (click)="onSettingsClick(trigger)">
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+      <button mat-menu-item (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  }
+</mat-toolbar>

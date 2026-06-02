@@ -1,0 +1,140 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter, Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { HeaderComponent } from './header.component';
+import { AuthFacade } from '../../store/auth/auth.facade';
+import type { User } from '@org/shared-types';
+
+describe('HeaderComponent', () => {
+  let authFacade: { user$: Observable<User | null>; isAuthenticated$: Observable<boolean>; logout: ReturnType<typeof vi.fn> };
+  let fixture: ReturnType<typeof TestBed.createComponent<HeaderComponent>>;
+
+  beforeEach(async () => {
+    authFacade = {
+      user$: of(null),
+      isAuthenticated$: of(false),
+      logout: vi.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [HeaderComponent],
+      providers: [
+        provideNoopAnimations(),
+        provideRouter([
+          { path: 'board', component: {} as any },
+          { path: 'user-settings', component: {} as any },
+        ]),
+        { provide: AuthFacade, useValue: authFacade },
+      ],
+    }).compileComponents();
+  });
+
+  describe('branding', () => {
+    it('should render Jira Clone branding text', () => {
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Jira Clone');
+    });
+  });
+
+  describe('user display', () => {
+    const user: User = { id: '1', email: 'alice@example.com', displayName: 'Alice' };
+
+    it('should show displayName when available', () => {
+      authFacade.user$ = of(user);
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Alice');
+    });
+
+    it('should fall back to email when displayName is empty', () => {
+      authFacade.user$ = of({ id: '1', email: 'alice@example.com', displayName: '' });
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('alice@example.com');
+    });
+  });
+
+  describe('dropdown menu', () => {
+    it('should have a menu trigger button with user display name', () => {
+      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const trigger = el.querySelector('.user-menu-trigger');
+      expect(trigger).toBeTruthy();
+      expect(trigger!.textContent).toContain('Alice');
+    });
+
+    it('should have a mat-menu in the template', () => {
+      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      // mat-menu element has the mat-menu directive attribute
+      const el = fixture.nativeElement as HTMLElement;
+      const menu = el.querySelector('mat-menu');
+      expect(menu).toBeTruthy();
+    });
+  });
+
+  describe('logout', () => {
+    it('should call AuthFacade.logout when onLogout is called', () => {
+      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      fixture.componentInstance.onLogout();
+      expect(authFacade.logout).toHaveBeenCalled();
+    });
+  });
+
+  describe('settings navigation', () => {
+    it('should close menu without navigating when already on /user-settings', async () => {
+      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      const router = TestBed.inject(Router);
+      await router.navigate(['/user-settings']);
+
+      const trigger = { closeMenu: vi.fn() } as any;
+      fixture.componentInstance.onSettingsClick(trigger);
+
+      expect(trigger.closeMenu).toHaveBeenCalled();
+      expect(router.url).toBe('/user-settings');
+    });
+
+    it('should navigate to /user-settings when on a different page', async () => {
+      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
+      authFacade.isAuthenticated$ = of(true);
+      fixture = TestBed.createComponent(HeaderComponent);
+      fixture.detectChanges();
+
+      const router = TestBed.inject(Router);
+      await router.navigate(['/board']);
+      fixture.detectChanges();
+
+      const trigger = { closeMenu: vi.fn() } as any;
+      fixture.componentInstance.onSettingsClick(trigger);
+      await fixture.whenStable();
+
+      expect(trigger.closeMenu).toHaveBeenCalled();
+      expect(router.url).toBe('/user-settings');
+    });
+  });
+});

@@ -1,0 +1,1 @@
+Let's improve header functionality. Heather should have. Username that is signed in settings button which is a drop down that should have uh go to settings button then log out button. Settings page should be a placeholder for now. 

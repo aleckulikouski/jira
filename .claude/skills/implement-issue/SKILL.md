@@ -16,6 +16,7 @@ Explore the repo.
 # IMPLEMENTATION
 
 Use /tdd to complete the task.
+Also invoke /angular-developer for Angular specific tasks.
 
 # FRONTEND
 
@@ -25,7 +26,6 @@ Components guidelines:
  - change Detection Strategy set to OnPush
  - all subscriptions should be cleaned up in a modern way using the `takeUntilDestroyed` with the `destroyRef` from `@angular/core`
  - templates should use modern @ syntax
- - use /angular-developer skill for Angular specific tasks
  - components interact with the store only via facades, and never directly
 
 # FEEDBACK LOOPS
@@ -34,11 +34,11 @@ Before committing, run the feedback loops:
 
 - `npm run test` to run the tests
 - `npm run typecheck` to run the type checker
-- launch the app, with help of `chrome-devtools` MCP check the implementation, check the console for errors and warnings, and check the network tab for any failed requests
+- launch the app, with help of `chrome-devtools` MCP and check the implementation, check the console for errors and warnings, and check the network tab for any failed requests
 
 # THE ISSUE
 
-If the task is complete, start BE and FE so I can check the implementation.
+If the task is complete, start BE and FE with `npm run start` so I can check the implementation.
 
 If the task is complete, move the issue file to `issues/done/`.
 
