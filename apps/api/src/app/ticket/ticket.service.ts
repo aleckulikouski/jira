@@ -1,17 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { AuthorizationService } from '../auth/authorization.service';
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auth: AuthorizationService,
+  ) {}
 
   async getForColumn(columnId: string, userId: string) {
-    const column = await this.prisma.boardColumn.findUnique({
-      where: { id: columnId },
-      include: { project: true },
-    });
-    if (!column) throw new NotFoundException();
-    if (column.project.ownerId !== userId) throw new ForbiddenException();
+    await this.auth.column(columnId, userId);
 
     return this.prisma.ticket.findMany({
       where: { columnId },
@@ -20,12 +19,7 @@ export class TicketService {
   }
 
   async create(columnId: string, userId: string, data: { title: string; description?: string }) {
-    const column = await this.prisma.boardColumn.findUnique({
-      where: { id: columnId },
-      include: { project: true },
-    });
-    if (!column) throw new NotFoundException();
-    if (column.project.ownerId !== userId) throw new ForbiddenException();
+    await this.auth.column(columnId, userId);
 
     const maxPosition = await this.prisma.ticket.aggregate({
       where: { columnId },
@@ -48,12 +42,7 @@ export class TicketService {
     userId: string,
     data: { title?: string; description?: string; columnId?: string; position?: number },
   ) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id: ticketId },
-      include: { column: { include: { project: true } } },
-    });
-    if (!ticket) throw new NotFoundException();
-    if (ticket.column.project.ownerId !== userId) throw new ForbiddenException();
+    const ticket = await this.auth.ticket(ticketId, userId);
 
     const { columnId, position, ...rest } = data;
     const hasPositionChange = columnId !== undefined || position !== undefined;
@@ -67,12 +56,7 @@ export class TicketService {
 
     // If changing column, verify target column ownership
     if (columnId !== undefined && columnId !== ticket.columnId) {
-      const targetColumn = await this.prisma.boardColumn.findUnique({
-        where: { id: targetColumnId },
-        include: { project: true },
-      });
-      if (!targetColumn) throw new NotFoundException();
-      if (targetColumn.project.ownerId !== userId) throw new ForbiddenException();
+      await this.auth.column(targetColumnId, userId);
     }
 
     // Transactional renumbering
@@ -107,12 +91,7 @@ export class TicketService {
   }
 
   async delete(ticketId: string, userId: string) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id: ticketId },
-      include: { column: { include: { project: true } } },
-    });
-    if (!ticket) throw new NotFoundException();
-    if (ticket.column.project.ownerId !== userId) throw new ForbiddenException();
+    await this.auth.ticket(ticketId, userId);
 
     await this.prisma.ticket.delete({ where: { id: ticketId } });
   }

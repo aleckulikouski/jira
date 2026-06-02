@@ -10,8 +10,8 @@ export class ColumnController {
 
   @Get('projects/:projectId/columns')
   @UseGuards(JwtAuthGuard)
-  async getForProject(@Param('projectId') projectId: string) {
-    return this.columnService.getForProject(projectId);
+  async getForProject(@Param('projectId') projectId: string, @Request() req: any) {
+    return this.columnService.getForProject(projectId, req.user.id);
   }
 
   @Post('projects/:projectId/columns')

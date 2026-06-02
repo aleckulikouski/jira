@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { AuthorizationService } from '../auth/authorization.service';
 
 @Injectable()
 export class ColumnService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auth: AuthorizationService,
+  ) {}
 
-  async getForProject(projectId: string) {
+  async getForProject(projectId: string, userId: string) {
+    await this.auth.project(projectId, userId);
     return this.prisma.boardColumn.findMany({
       where: { projectId },
       orderBy: { order: 'asc' },
@@ -13,10 +18,7 @@ export class ColumnService {
   }
 
   async create(projectId: string, userId: string, name: string) {
-    const project = await this.prisma.project.findFirst({
-      where: { id: projectId, ownerId: userId },
-    });
-    if (!project) throw new ForbiddenException();
+    await this.auth.project(projectId, userId);
 
     const maxOrder = await this.prisma.boardColumn.aggregate({
       where: { projectId },
@@ -30,12 +32,7 @@ export class ColumnService {
   }
 
   async update(columnId: string, userId: string, data: { name?: string; order?: number }) {
-    const column = await this.prisma.boardColumn.findUnique({
-      where: { id: columnId },
-      include: { project: true },
-    });
-    if (!column) throw new NotFoundException();
-    if (column.project.ownerId !== userId) throw new ForbiddenException();
+    await this.auth.column(columnId, userId);
 
     return this.prisma.boardColumn.update({
       where: { id: columnId },
@@ -44,12 +41,7 @@ export class ColumnService {
   }
 
   async delete(columnId: string, userId: string) {
-    const column = await this.prisma.boardColumn.findUnique({
-      where: { id: columnId },
-      include: { project: true },
-    });
-    if (!column) throw new NotFoundException();
-    if (column.project.ownerId !== userId) throw new ForbiddenException();
+    await this.auth.column(columnId, userId);
 
     await this.prisma.boardColumn.delete({ where: { id: columnId } });
   }
