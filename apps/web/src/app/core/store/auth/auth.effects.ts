@@ -4,6 +4,7 @@ import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AuthActions } from './auth.actions';
 import { Router } from '@angular/router';
+import { TokenStorage } from '../../tokens/token-storage';
 
 export const register$ = createEffect(
   (actions$ = inject(Actions), authService = inject(AuthService)) =>
@@ -38,11 +39,11 @@ export const login$ = createEffect(
 );
 
 export const persistAuth$ = createEffect(
-  (actions$ = inject(Actions)) =>
+  (actions$ = inject(Actions), tokenStorage = inject(TokenStorage)) =>
     actions$.pipe(
       ofType(AuthActions.registerSuccess, AuthActions.loginSuccess),
       tap(({ accessToken, user }) => {
-        localStorage.setItem('token', accessToken);
+        tokenStorage.set(accessToken);
         localStorage.setItem('user', JSON.stringify(user));
       }),
     ),
@@ -59,11 +60,11 @@ export const redirectOnAuth$ = createEffect(
 );
 
 export const logout$ = createEffect(
-  (actions$ = inject(Actions), router = inject(Router)) =>
+  (actions$ = inject(Actions), router = inject(Router), tokenStorage = inject(TokenStorage)) =>
     actions$.pipe(
       ofType(AuthActions.logout),
       tap(() => {
-        localStorage.removeItem('token');
+        tokenStorage.remove();
         localStorage.removeItem('user');
         router.navigate(['/login']);
       }),

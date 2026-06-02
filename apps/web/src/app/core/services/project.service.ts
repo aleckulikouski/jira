@@ -8,9 +8,6 @@ export class ProjectService {
   private readonly base = 'http://localhost:3000/api';
 
   getMine() {
-    const token = localStorage.getItem('token');
-    return this.http.get<Project>(`${this.base}/projects/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.http.get<Project>(`${this.base}/projects/me`);
   }
 }

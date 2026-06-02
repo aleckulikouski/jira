@@ -1,5 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import { AuthActions } from './auth.actions';
+import { LocalStorageTokenStorage } from '../../tokens/local-storage-token-storage';
 
 export interface AuthState {
   user: { id: string; email: string } | null;
@@ -20,7 +21,7 @@ function loadUser(): { id: string; email: string } | null {
 
 const initialState: AuthState = {
   user: loadUser(),
-  token: localStorage.getItem('token'),
+  token: LocalStorageTokenStorage.readStoredToken(),
   loading: false,
   error: null,
 };
