@@ -65,16 +65,20 @@ describe('HeaderComponent', () => {
   });
 
   describe('dropdown menu', () => {
-    it('should have a menu trigger button with user display name', () => {
+    it('should show user display name outside the menu trigger button', () => {
       userFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
       userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
       const el = fixture.nativeElement as HTMLElement;
+      const userInfo = el.querySelector('.user-info');
       const trigger = el.querySelector('.user-menu-trigger');
+      expect(userInfo).toBeTruthy();
       expect(trigger).toBeTruthy();
-      expect(trigger!.textContent).toContain('Alice');
+      expect(userInfo!.textContent).toContain('Alice');
+      // The trigger button should NOT contain the user name anymore
+      expect(trigger!.textContent).not.toContain('Alice');
     });
 
     it('should have a mat-menu in the template', () => {

@@ -3,18 +3,19 @@
   <span class="spacer"></span>
 
   @if (userFacade.user$ | async; as user) {
+    <div class="user-info">
+      <app-avatar [user]="user" [size]="32" />
+      <span class="user-name">{{ user.displayName || user.email }}</span>
+    </div>
+
     <button
-      mat-button
+      mat-icon-button
       class="user-menu-trigger"
       [matMenuTriggerFor]="userMenu"
       #trigger="matMenuTrigger"
       aria-label="User menu"
     >
-      <span class="user-menu-content">
-        <app-avatar [user]="user" [size]="32" />
-        {{ user.displayName || user.email }}
-        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-      </span>
+      <mat-icon>arrow_drop_down</mat-icon>
     </button>
 
     <mat-menu #userMenu="matMenu">

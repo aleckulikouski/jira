@@ -8,8 +8,19 @@
   flex: 1 1 auto;
 }
 
-.user-menu-content {
+.user-info {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+
+  .user-name {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.user-menu-trigger {
+  margin-left: 4px;
 }

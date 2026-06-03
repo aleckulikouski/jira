@@ -1,3 +1,5 @@
+When talking to me sacrifice grammar for the sake of contingency.
+
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
