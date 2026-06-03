@@ -5,9 +5,7 @@ description: Implement a single issue by writing the necessary code and document
 
 # Locate the ISSUE
 
-Ask the user for the ISSUE file path (e.g. `issues/002-auth.md`).
-
-If the ISSUE is not already in your context window, read it from the file.
+If the ISSUE is not already in your context window, ask the user for the ISSUE.
 
 # EXPLORATION
 
@@ -37,8 +35,6 @@ Before committing, run the feedback loops:
 - launch the app, with help of `chrome-devtools` MCP and check the implementation, check the console for errors and warnings, and check the network tab for any failed requests
 
 # THE ISSUE
-
-If the task is complete, start BE and FE with `npm run start` so I can check the implementation.
 
 If the task is complete, move the issue file to `issues/done/`.
 

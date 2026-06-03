@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, CanActivate, ExecutionContext, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { TicketModule } from './ticket.module';
+import { PrismaModule } from '../prisma.module';
 import { PrismaService } from '../prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -82,7 +83,8 @@ describe('Ticket API', () => {
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [TicketModule],
+      imports: [TicketModule, PrismaModule],
+      providers: [{ provide: PrismaService, useValue: prisma }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue(mockGuard)

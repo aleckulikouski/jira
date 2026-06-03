@@ -4,15 +4,15 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { HeaderComponent } from './header.component';
-import { AuthFacade } from '../../store/auth/auth.facade';
+import { UserFacade } from '../../store/user/user.facade';
 import type { User } from '@org/shared-types';
 
 describe('HeaderComponent', () => {
-  let authFacade: { user$: Observable<User | null>; isAuthenticated$: Observable<boolean>; logout: ReturnType<typeof vi.fn> };
+  let userFacade: { user$: Observable<User | null>; isAuthenticated$: Observable<boolean>; logout: ReturnType<typeof vi.fn> };
   let fixture: ReturnType<typeof TestBed.createComponent<HeaderComponent>>;
 
   beforeEach(async () => {
-    authFacade = {
+    userFacade = {
       user$: of(null),
       isAuthenticated$: of(false),
       logout: vi.fn(),
@@ -26,7 +26,7 @@ describe('HeaderComponent', () => {
           { path: 'board', component: {} as any },
           { path: 'user-settings', component: {} as any },
         ]),
-        { provide: AuthFacade, useValue: authFacade },
+        { provide: UserFacade, useValue: userFacade },
       ],
     }).compileComponents();
   });
@@ -44,8 +44,8 @@ describe('HeaderComponent', () => {
     const user: User = { id: '1', email: 'alice@example.com', displayName: 'Alice' };
 
     it('should show displayName when available', () => {
-      authFacade.user$ = of(user);
-      authFacade.isAuthenticated$ = of(true);
+      userFacade.user$ = of(user);
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
@@ -54,8 +54,8 @@ describe('HeaderComponent', () => {
     });
 
     it('should fall back to email when displayName is empty', () => {
-      authFacade.user$ = of({ id: '1', email: 'alice@example.com', displayName: '' });
-      authFacade.isAuthenticated$ = of(true);
+      userFacade.user$ = of({ id: '1', email: 'alice@example.com', displayName: '' });
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
@@ -66,8 +66,8 @@ describe('HeaderComponent', () => {
 
   describe('dropdown menu', () => {
     it('should have a menu trigger button with user display name', () => {
-      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
-      authFacade.isAuthenticated$ = of(true);
+      userFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
@@ -78,8 +78,8 @@ describe('HeaderComponent', () => {
     });
 
     it('should have a mat-menu in the template', () => {
-      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
-      authFacade.isAuthenticated$ = of(true);
+      userFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Alice' });
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
@@ -91,21 +91,21 @@ describe('HeaderComponent', () => {
   });
 
   describe('logout', () => {
-    it('should call AuthFacade.logout when onLogout is called', () => {
-      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
-      authFacade.isAuthenticated$ = of(true);
+    it('should call UserFacade.logout when onLogout is called', () => {
+      userFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
       fixture.componentInstance.onLogout();
-      expect(authFacade.logout).toHaveBeenCalled();
+      expect(userFacade.logout).toHaveBeenCalled();
     });
   });
 
   describe('settings navigation', () => {
     it('should close menu without navigating when already on /user-settings', async () => {
-      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
-      authFacade.isAuthenticated$ = of(true);
+      userFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 
@@ -120,8 +120,8 @@ describe('HeaderComponent', () => {
     });
 
     it('should navigate to /user-settings when on a different page', async () => {
-      authFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
-      authFacade.isAuthenticated$ = of(true);
+      userFacade.user$ = of({ id: '1', email: 'a@b.com', displayName: 'Test' });
+      userFacade.isAuthenticated$ = of(true);
       fixture = TestBed.createComponent(HeaderComponent);
       fixture.detectChanges();
 

@@ -56,3 +56,6 @@ test-output
 # environment
 .env
 *.log
+
+# uploads
+apps/api/uploads/

@@ -70,6 +70,14 @@ if [ "$ELAPSED" -ge "$DB_TIMEOUT_SEC" ]; then
 fi
 
 # =============================================================================
+# 2a. Ensure uploads directory exists
+# =============================================================================
+
+UPLOADS_DIR="$REPO_ROOT/apps/api/uploads"
+mkdir -p "$UPLOADS_DIR/avatars"
+echo "==> Uploads directory: $UPLOADS_DIR"
+
+# =============================================================================
 # 3. Run Prisma migrations
 # =============================================================================
 
@@ -90,7 +98,7 @@ npx -y concurrently \
   --prefix "[{name}]" \
   --names "API,WEB" \
   --prefix-colors "green,blue" \
-  "DATABASE_URL=$DATABASE_URL PORT=$API_PORT $REPO_ROOT/node_modules/.bin/nx serve api" \
+  "DATABASE_URL=$DATABASE_URL UPLOADS_DIR=$UPLOADS_DIR PORT=$API_PORT $REPO_ROOT/node_modules/.bin/nx serve api" \
   "$REPO_ROOT/node_modules/.bin/nx serve web"
 
 echo ""

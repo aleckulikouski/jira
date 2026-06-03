@@ -81,7 +81,7 @@ export class AuthService {
     return this.tokenFor(user);
   }
 
-  private tokenFor(user: Pick<User, 'id' | 'email' | 'displayName'>) {
+  private tokenFor(user: Pick<User, 'id' | 'email' | 'displayName' | 'avatarUrl'>) {
     const payload = { sub: user.id, email: user.email };
     return {
       accessToken: this.jwtService.sign(payload),
@@ -89,6 +89,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
+        avatarUrl: user.avatarUrl ?? null,
       },
     };
   }

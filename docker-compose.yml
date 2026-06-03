@@ -9,6 +9,22 @@ services:
       POSTGRES_DB: jira
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    image: node:22-alpine
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://jira:jira@postgres:5432/jira"
+      JWT_SECRET: "dev-secret"
+      UPLOADS_DIR: "/uploads"
+    volumes:
+      - uploads:/uploads
+    depends_on:
+      - postgres
+    command: ["echo", "API container placeholder — use nx serve api for development"]
 
 volumes:
   postgres-data:
+  uploads:

@@ -5,12 +5,14 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthFacade } from '../../store/auth/auth.facade';
+import { UserFacade } from '../../store/user/user.facade';
+import { AvatarComponent } from '../avatar/avatar.component';
 
 @Component({
   selector: 'app-header',
   imports: [
     AsyncPipe,
+    AvatarComponent,
     MatToolbarModule,
     MatButtonModule,
     MatMenuModule,
@@ -21,11 +23,11 @@ import { AuthFacade } from '../../store/auth/auth.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
-  readonly auth = inject(AuthFacade);
+  readonly userFacade = inject(UserFacade);
   private readonly router = inject(Router);
 
   onLogout() {
-    this.auth.logout();
+    this.userFacade.logout();
   }
 
   onSettingsClick(trigger: MatMenuTrigger) {

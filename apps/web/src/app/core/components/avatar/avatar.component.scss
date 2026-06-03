@@ -1,0 +1,16 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.avatar-image {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-initials {
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 600;
+  user-select: none;
+}

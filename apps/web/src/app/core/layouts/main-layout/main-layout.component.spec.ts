@@ -4,15 +4,15 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { MainLayoutComponent } from './main-layout.component';
-import { AuthFacade } from '../../store/auth/auth.facade';
+import { UserFacade } from '../../store/user/user.facade';
 import type { User } from '@org/shared-types';
 
 describe('MainLayoutComponent', () => {
-  let authFacade: { user$: Observable<User | null>; isAuthenticated$: Observable<boolean>; logout: ReturnType<typeof vi.fn> };
+  let userFacade: { user$: Observable<User | null>; isAuthenticated$: Observable<boolean>; logout: ReturnType<typeof vi.fn> };
   let fixture: ReturnType<typeof TestBed.createComponent<MainLayoutComponent>>;
 
   beforeEach(async () => {
-    authFacade = {
+    userFacade = {
       user$: of(null),
       isAuthenticated$: of(false),
       logout: vi.fn(),
@@ -23,7 +23,7 @@ describe('MainLayoutComponent', () => {
       providers: [
         provideNoopAnimations(),
         provideRouter([]),
-        { provide: AuthFacade, useValue: authFacade },
+        { provide: UserFacade, useValue: userFacade },
       ],
     }).compileComponents();
 

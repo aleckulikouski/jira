@@ -1,10 +1,10 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map } from 'rxjs';
-import { AuthFacade } from '../store/auth/auth.facade';
+import { UserFacade } from '../store/user/user.facade';
 
 export const authGuard: CanActivateFn = () => {
-  const auth = inject(AuthFacade);
+  const auth = inject(UserFacade);
   const router = inject(Router);
 
   return auth.isAuthenticated$.pipe(

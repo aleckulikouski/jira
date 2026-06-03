@@ -1,11 +1,13 @@
 import 'dotenv/config';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'uploads/*path', method: RequestMethod.GET }],
+  });
   app.enableCors({
     origin: 'http://localhost:4200',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],

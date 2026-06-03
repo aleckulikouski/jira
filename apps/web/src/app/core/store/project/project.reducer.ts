@@ -1,7 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 import type { Project } from '@org/shared-types';
 import { ProjectActions } from './project.actions';
-import { AuthActions } from '../auth/auth.actions';
+import { UserActions } from '../user/user.actions';
 
 export interface ProjectState {
   project: Project | null;
@@ -18,7 +18,7 @@ const initialState: ProjectState = {
 export const projectReducer = createReducer(
   initialState,
 
-  on(AuthActions.logout, () => initialState),
+  on(UserActions.logout, () => initialState),
 
   on(ProjectActions.loadProject, (state) => ({
     ...state,

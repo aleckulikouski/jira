@@ -1,7 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 import type { BoardColumn, Ticket } from '@org/shared-types';
 import { BoardActions } from './board.actions';
-import { AuthActions } from '../auth/auth.actions';
+import { UserActions } from '../user/user.actions';
 
 export interface BoardState {
   columns: BoardColumn[];
@@ -20,7 +20,7 @@ const initialState: BoardState = {
 export const boardReducer = createReducer(
   initialState,
 
-  on(AuthActions.logout, () => initialState),
+  on(UserActions.logout, () => initialState),
 
   on(BoardActions.loadColumns, (state) => ({
     ...state,

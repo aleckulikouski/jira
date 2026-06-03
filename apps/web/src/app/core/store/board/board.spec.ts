@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BoardActions } from './board.actions';
-import { AuthActions } from '../auth/auth.actions';
+import { UserActions } from '../user/user.actions';
 import { boardReducer, BoardState } from './board.reducer';
 import { BoardColumn, Ticket } from '@org/shared-types';
 
@@ -178,7 +178,7 @@ describe('Board Reducer - Tickets', () => {
         loading: false,
         error: null,
       };
-      const state = boardReducer(populated, AuthActions.logout());
+      const state = boardReducer(populated, UserActions.logout());
       expect(state.columns).toEqual([]);
       expect(state.tickets).toEqual([]);
     });

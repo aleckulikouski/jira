@@ -2,7 +2,7 @@
   <span class="brand">Jira Clone</span>
   <span class="spacer"></span>
 
-  @if (auth.user$ | async; as user) {
+  @if (userFacade.user$ | async; as user) {
     <button
       mat-button
       class="user-menu-trigger"
@@ -10,8 +10,11 @@
       #trigger="matMenuTrigger"
       aria-label="User menu"
     >
-      {{ user.displayName || user.email }}
-      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      <span class="user-menu-content">
+        <app-avatar [user]="user" [size]="32" />
+        {{ user.displayName || user.email }}
+        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+      </span>
     </button>
 
     <mat-menu #userMenu="matMenu">

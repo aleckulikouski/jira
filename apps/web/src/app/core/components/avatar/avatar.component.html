@@ -1,0 +1,19 @@
+@if (avatarUrl) {
+  <img
+    class="avatar-image"
+    [src]="avatarUrl"
+    [width]="size()"
+    [height]="size()"
+    [alt]="user()?.displayName || 'User avatar'"
+  />
+} @else {
+  <div
+    class="avatar-initials"
+    [style.width]="sizePx"
+    [style.height]="sizePx"
+    [style.background-color]="backgroundColor"
+    [style.color]="textColor"
+    [style.font-size]="fontSizePx"
+    [style.line-height]="sizePx"
+  >{{ initials }}</div>
+}

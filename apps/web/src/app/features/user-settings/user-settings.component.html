@@ -1,0 +1,102 @@
+<div class="settings-header">
+  <button mat-icon-button aria-label="Back to board" (click)="onBack()">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <h1>Settings</h1>
+</div>
+
+<div class="settings-container">
+  <!-- Profile card -->
+  <mat-card class="settings-card">
+    <mat-card-header>
+      <mat-card-title>Profile</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="profileForm" (ngSubmit)="onSaveProfile()">
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" readonly />
+        </mat-form-field>
+
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>Display name</mat-label>
+          <input matInput formControlName="displayName" />
+          @if (profileForm.get('displayName')?.hasError('required')) {
+            <mat-error>Display name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Avatar upload -->
+        <div class="avatar-upload-area" (click)="onAvatarClick()">
+          @if (avatarPreviewUrl || (user$ | async)?.avatarUrl) {
+            <img
+              class="avatar-preview"
+              [src]="avatarPreviewUrl || (user$ | async)!.avatarUrl!"
+              alt="Avatar preview"
+            />
+          } @else {
+            <app-avatar [user]="(user$ | async) ?? null" [size]="96" />
+          }
+          <div class="avatar-overlay">
+            <mat-icon>photo_camera</mat-icon>
+            <span>Click to change</span>
+          </div>
+        </div>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="profileForm.invalid || (profileSaving$ | async)"
+        >
+          @if (profileSaving$ | async) {
+            <mat-spinner diameter="20"></mat-spinner>
+            Saving…
+          } @else {
+            Save
+          }
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Password card -->
+  <mat-card class="settings-card">
+    <mat-card-header>
+      <mat-card-title>Change Password</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()">
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>New password</mat-label>
+          <input matInput type="password" formControlName="newPassword" />
+        </mat-form-field>
+
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>Confirm password</mat-label>
+          <input matInput type="password" formControlName="confirmPassword" />
+        </mat-form-field>
+
+        @if (passwordForm.hasError('passwordsMatch') && passwordForm.get('confirmPassword')?.touched) {
+          <mat-error class="form-error">Passwords do not match</mat-error>
+        }
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="passwordForm.hasError('passwordsMatch') || passwordForm.pristine || !passwordForm.get('newPassword')?.value || !passwordForm.get('confirmPassword')?.value || (passwordChanging$ | async)"
+        >
+          @if (passwordChanging$ | async) {
+            <mat-spinner diameter="20"></mat-spinner>
+            Saving…
+          } @else {
+            Save
+          }
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
