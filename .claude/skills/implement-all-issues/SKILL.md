@@ -1,5 +1,5 @@
 ---
-name: implement-all-issue
+name: implement-all-issues
 description: Implement all pending issues in the `issues/` folder by writing the necessary code and documentation.
 ---
 

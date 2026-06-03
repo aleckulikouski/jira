@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AuthorizationService } from '../auth/authorization.service';
 
@@ -43,6 +43,14 @@ export class ColumnService {
   async delete(columnId: string, userId: string) {
     await this.auth.column(columnId, userId);
 
-    await this.prisma.boardColumn.delete({ where: { id: columnId } });
+    await this.prisma.$transaction(async (tx) => {
+      const ticketCount = await tx.ticket.count({ where: { columnId } });
+      if (ticketCount > 0) {
+        throw new ConflictException(
+          `Cannot delete column: it still contains ${ticketCount} ticket(s)`,
+        );
+      }
+      await tx.boardColumn.delete({ where: { id: columnId } });
+    });
   }
 }

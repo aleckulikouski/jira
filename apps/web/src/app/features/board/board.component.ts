@@ -7,8 +7,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CdkDropList, CdkDrag, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
-import { filter, Observable, take } from 'rxjs';
+import { filter, map, Observable, take } from 'rxjs';
 import { BoardFacade } from '../../core/store/board/board.facade';
 import { ProjectFacade } from '../../core/store/project/project.facade';
 import { AddColumnDialogComponent } from './add-column-dialog/add-column-dialog.component';
@@ -26,6 +27,7 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     MatButtonModule,
     MatIconModule,
     MatInputModule,
+    MatTooltipModule,
     CdkDropList,
     CdkDrag,
     CdkDragPlaceholder,
@@ -76,6 +78,10 @@ export class BoardComponent implements OnInit {
       this.ticketSelectors.set(columnId, this.board.ticketsByColumn(columnId));
     }
     return this.ticketSelectors.get(columnId)!;
+  }
+
+  isColumnEmpty(columnId: string): Observable<boolean> {
+    return this.ticketsFor(columnId).pipe(map((tickets) => tickets.length === 0));
   }
 
   startEdit(column: BoardColumn) {
@@ -143,7 +149,7 @@ export class BoardComponent implements OnInit {
   confirmDelete(column: BoardColumn) {
     const data: ConfirmDialogData = {
       title: 'Delete Column',
-      message: `Delete "${column.name}" and all its tickets? This cannot be undone.`,
+      message: `Delete "${column.name}"? This cannot be undone.`,
     };
     const ref = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',

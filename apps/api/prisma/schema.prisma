@@ -43,7 +43,7 @@ model BoardColumn {
 model Ticket {
   id          String      @id @default(uuid())
   columnId    String
-  column      BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  column      BoardColumn @relation(fields: [columnId], references: [id], onDelete: NoAction)
   assigneeId  String?
   assignee    User?       @relation(fields: [assigneeId], references: [id])
   title       String
