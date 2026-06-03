@@ -27,27 +27,45 @@ export class UserService {
 
   async updateProfile(
     userId: string,
-    displayName: string,
+    displayName?: string,
     file?: Express.Multer.File,
+    removeAvatar?: string,
   ): Promise<User> {
-    if (!displayName?.trim()) {
-      throw new BadRequestException('displayName is required');
+    if (!displayName?.trim() && !file && removeAvatar !== 'true') {
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+      });
+      return {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+      };
     }
 
-    let avatarUrl: string | undefined;
+    let avatarUrl: string | null | undefined;
 
-    if (file) {
+    if (removeAvatar === 'true') {
+      await this.deleteAvatar(userId);
+      avatarUrl = null;
+      this.logger.log(`Avatar removed for user ${userId}`);
+    } else if (file) {
       this.validateImage(file);
       avatarUrl = await this.saveAvatar(userId, file);
       this.logger.log(`Avatar saved for user ${userId} at ${avatarUrl}`);
     }
 
+    const data: Record<string, unknown> = {};
+    if (displayName?.trim()) {
+      data['displayName'] = displayName.trim();
+    }
+    if (avatarUrl !== undefined) {
+      data['avatarUrl'] = avatarUrl;
+    }
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        displayName: displayName.trim(),
-        ...(avatarUrl !== undefined && { avatarUrl }),
-      },
+      data,
     });
 
     return {
@@ -89,6 +107,21 @@ export class UserService {
     });
 
     this.logger.log(`Password changed for user ${userId}`);
+  }
+
+  private async deleteAvatar(userId: string): Promise<void> {
+    const uploadsDir =
+      process.env['UPLOADS_DIR'] ?? path.join(__dirname, 'uploads');
+    const filePath = path.join(uploadsDir, 'avatars', `${userId}.jpg`);
+
+    try {
+      await fs.promises.unlink(filePath);
+    } catch (err: unknown) {
+      const nodeErr = err as NodeJS.ErrnoException;
+      if (nodeErr.code !== 'ENOENT') {
+        throw err;
+      }
+    }
   }
 
   private async saveAvatar(

@@ -28,10 +28,16 @@ export class UserController {
   )
   async updateProfile(
     @Req() req: Request & { user: { id: string; email: string } },
-    @Body('displayName') displayName: string,
+    @Body('displayName') displayName?: string,
+    @Body('removeAvatar') removeAvatar?: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.userService.updateProfile(req.user.id, displayName, file);
+    return this.userService.updateProfile(
+      req.user.id,
+      displayName,
+      file,
+      removeAvatar,
+    );
   }
 
   @Post('change-password')

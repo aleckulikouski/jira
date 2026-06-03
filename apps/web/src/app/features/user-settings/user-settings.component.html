@@ -28,20 +28,35 @@
         </mat-form-field>
 
         <!-- Avatar upload -->
-        <div class="avatar-upload-area" (click)="onAvatarClick()">
-          @if (avatarPreviewUrl || (user$ | async)?.avatarUrl) {
-            <img
-              class="avatar-preview"
-              [src]="avatarPreviewUrl || (user$ | async)!.avatarUrl!"
-              alt="Avatar preview"
-            />
-          } @else {
-            <app-avatar [user]="(user$ | async) ?? null" [size]="96" />
-          }
-          <div class="avatar-overlay">
-            <mat-icon>photo_camera</mat-icon>
-            <span>Click to change</span>
+        <div class="avatar-wrapper">
+          <div class="avatar-upload-area" (click)="onAvatarClick()">
+            @if (avatarAction !== 'remove' && (avatarPreviewUrl || (user$ | async)?.avatarUrl)) {
+              <img
+                class="avatar-preview"
+                [src]="avatarPreviewUrl || (user$ | async)!.avatarUrl!"
+                alt="Avatar preview"
+              />
+            } @else {
+              @let u = (user$ | async);
+              <app-avatar [user]="u ? { id: u.id, email: u.email, displayName: u.displayName, avatarUrl: null } : null" [size]="96" />
+            }
+            <div class="avatar-overlay">
+              <mat-icon>photo_camera</mat-icon>
+              <span>Click to change</span>
+            </div>
           </div>
+          <mat-icon
+            class="avatar-remove-btn"
+            [class.avatar-remove-btn--hidden]="!showRemoveButton"
+            aria-label="Remove avatar"
+            matTooltip="Remove avatar"
+            (click)="onRemoveAvatar()"
+            (keydown.enter)="onRemoveAvatar()"
+            tabindex="0"
+            role="button"
+          >
+            delete
+          </mat-icon>
         </div>
 
         <button

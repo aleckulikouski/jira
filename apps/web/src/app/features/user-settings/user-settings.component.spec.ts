@@ -111,4 +111,99 @@ describe('UserSettingsComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('mat-spinner')).toBeTruthy();
   });
+
+  describe('avatar removal', () => {
+    function queryRemoveButton(el: HTMLElement): HTMLElement | null {
+      return el.querySelector('[aria-label="Remove avatar"]');
+    }
+
+    it('hides remove button when user has no avatar', () => {
+      const fixture = TestBed.createComponent(UserSettingsComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(queryRemoveButton(el)?.classList.contains('avatar-remove-btn--hidden')).toBe(true);
+    });
+
+    it('shows remove button when user has an existing avatar', () => {
+      mockFacade._user.next({
+        id: '1',
+        email: 'a@b.com',
+        displayName: 'Alice',
+        avatarUrl: '/uploads/avatars/1.jpg',
+      });
+      const fixture = TestBed.createComponent(UserSettingsComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(queryRemoveButton(el)).toBeTruthy();
+    });
+
+    it('hides remove button after clicking it', () => {
+      mockFacade._user.next({
+        id: '1',
+        email: 'a@b.com',
+        displayName: 'Alice',
+        avatarUrl: '/uploads/avatars/1.jpg',
+      });
+      const fixture = TestBed.createComponent(UserSettingsComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      queryRemoveButton(el)?.click();
+      fixture.detectChanges();
+
+      expect(queryRemoveButton(el)?.classList.contains('avatar-remove-btn--hidden')).toBe(true);
+    });
+
+    it('shows initials after clicking remove', () => {
+      mockFacade._user.next({
+        id: '1',
+        email: 'a@b.com',
+        displayName: 'Alice',
+        avatarUrl: '/uploads/avatars/1.jpg',
+      });
+      const fixture = TestBed.createComponent(UserSettingsComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      queryRemoveButton(el)?.click();
+      fixture.detectChanges();
+
+      expect(el.querySelector('app-avatar')).toBeTruthy();
+      expect(el.querySelector('.avatar-preview')).toBeNull();
+    });
+
+    it('sends removeAvatar in FormData on save', () => {
+      mockFacade._user.next({
+        id: '1',
+        email: 'a@b.com',
+        displayName: 'Alice',
+        avatarUrl: '/uploads/avatars/1.jpg',
+      });
+      const fixture = TestBed.createComponent(UserSettingsComponent);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      queryRemoveButton(el)?.click();
+      fixture.detectChanges();
+
+      const form = el.querySelector('form') as HTMLFormElement;
+      form.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(mockFacade.updateProfile).toHaveBeenCalled();
+      const formData = mockFacade.updateProfile.mock.calls[0][0] as FormData;
+      expect(formData.get('removeAvatar')).toBe('true');
+    });
+
+    it('allows navigation when no avatar changes', async () => {
+      const fixture = TestBed.createComponent(UserSettingsComponent);
+      fixture.detectChanges();
+
+      const component = fixture.componentInstance;
+      const result = await component.canDeactivate();
+      expect(result).toBe(true);
+    });
+  });
 });

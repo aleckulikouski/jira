@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Observable, pairwise, filter, withLatestFrom, startWith } from 'rxjs';
 import { ConfirmDialogComponent } from '../../core/components/confirm-dialog/confirm-dialog.component';
 import { UserFacade } from '../../core/store/user/user.facade';
@@ -33,6 +34,7 @@ const AVATAR_QUALITY = 0.85;
     MatDialogModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatTooltipModule,
   ],
   templateUrl: './user-settings.component.html',
   styleUrl: './user-settings.component.scss',
@@ -64,9 +66,10 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
     { validators: passwordsMatch },
   );
 
+  avatarAction: 'none' | 'upload' | 'remove' = 'none';
   avatarFile: Blob | null = null;
   avatarPreviewUrl: string | null = null;
-  avatarChanged = false;
+  private hasExistingAvatar = false;
   private objectUrl: string | null = null;
 
   ngOnInit(): void {
@@ -75,6 +78,7 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((user) => {
         if (user) {
+          this.hasExistingAvatar = !!user.avatarUrl;
           this.profileForm.patchValue({
             email: user.email,
             displayName: user.displayName,
@@ -118,13 +122,22 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
         } else {
           this.snackBar.open('Profile updated', 'Close', { duration: 5000 });
           this.profileForm.markAsPristine();
-          this.avatarChanged = false;
+          this.avatarAction = 'none';
+          this.avatarFile = null;
+          this.avatarPreviewUrl = null;
         }
       });
   }
 
   ngOnDestroy(): void {
     this.revokePreviewUrl();
+  }
+
+  get showRemoveButton(): boolean {
+    return (
+      this.avatarAction !== 'remove' &&
+      (this.hasExistingAvatar || this.avatarAction === 'upload')
+    );
   }
 
   onAvatarClick(): void {
@@ -138,6 +151,14 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
       input.remove();
     };
     input.click();
+  }
+
+  onRemoveAvatar(): void {
+    this.avatarAction = 'remove';
+    this.avatarFile = null;
+    this.revokePreviewUrl();
+    this.avatarPreviewUrl = null;
+    this.cdr.markForCheck();
   }
 
   private resizeAndPreview(file: File): void {
@@ -164,7 +185,7 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
           this.revokePreviewUrl();
           this.objectUrl = URL.createObjectURL(blob);
           this.avatarPreviewUrl = this.objectUrl;
-          this.avatarChanged = true;
+          this.avatarAction = 'upload';
           this.cdr.markForCheck();
         },
         'image/jpeg',
@@ -188,6 +209,9 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
     if (this.avatarFile) {
       formData.append('file', this.avatarFile, 'avatar.jpg');
     }
+    if (this.avatarAction === 'remove') {
+      formData.append('removeAvatar', 'true');
+    }
     this.userFacade.updateProfile(formData);
   }
 
@@ -202,7 +226,7 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
   }
 
   canDeactivate(): boolean | Observable<boolean> {
-    if (!this.profileForm.dirty && !this.passwordForm.dirty && !this.avatarChanged) {
+    if (!this.profileForm.dirty && !this.passwordForm.dirty && this.avatarAction === 'none') {
       return true;
     }
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
