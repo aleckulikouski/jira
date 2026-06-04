@@ -5,8 +5,7 @@
   "scripts": {
     "start": "bash scripts/start-dev.sh",
     "dev": "bash scripts/start-dev.sh",
-    "stop": "bash scripts/stop-dev.sh",
-    "stop:all": "bash scripts/stop-dev.sh --db"
+    "stop": "bash scripts/stop-dev.sh"
   },
   "private": true,
   "devDependencies": {

@@ -5,7 +5,7 @@
       <button
         mat-stroked-button
         class="add-column-btn"
-        (click)="openAddColumnDialog(project.id)"
+        (click)="openColumnEditorDialog()"
       >
         <mat-icon>add</mat-icon> Add column
       </button>
@@ -25,7 +25,7 @@
       <div class="empty-state">
         <p>No columns yet. Create your first column to get started.</p>
         @if (project.project$ | async; as project) {
-          <button mat-flat-button color="primary" (click)="openAddColumnDialog(project.id)">
+          <button mat-flat-button color="primary" (click)="openColumnEditorDialog()">
             Add Column
           </button>
         }
@@ -51,20 +51,37 @@
                     {{ col.name }}
                   </mat-card-title>
                   @let empty = (isColumnEmpty(col.id) | async) ?? false;
-                    <span
-                      [matTooltip]="'Cannot delete a column that contains tickets'"
-                      [matTooltipDisabled]="empty"
+                  <button
+                    mat-icon-button
+                    class="column-actions-btn"
+                    [matMenuTriggerFor]="columnMenu"
+                    [attr.aria-label]="'Column actions for ' + col.name"
+                  >
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #columnMenu="matMenu">
+                    <button
+                      mat-menu-item
+                      (click)="editColumn(col)"
+                      [attr.aria-label]="'Edit ' + col.name + ' column'"
                     >
-                      <button
-                        mat-icon-button
-                        class="delete-btn"
-                        [disabled]="!empty"
-                        (click)="confirmDelete(col)"
-                        aria-label="Delete column"
-                      >
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </span>
+                      <mat-icon>edit</mat-icon>
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      [disabled]="!empty"
+                      (click)="confirmDelete(col)"
+                      [attr.aria-label]="'Delete ' + col.name + ' column' + (!empty ? '. Column must be empty' : '')"
+                      [attr.aria-describedby]="!empty ? 'delete-helper-' + col.id : null"
+                    >
+                      <mat-icon>delete</mat-icon>
+                      <span>Delete</span>
+                      @if (!empty) {
+                        <span class="menu-helper-text" [id]="'delete-helper-' + col.id">Column must be empty</span>
+                      }
+                    </button>
+                  </mat-menu>
                 </mat-card-header>
                 <mat-card-content
                   cdkDropList

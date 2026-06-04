@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,13 +6,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { filter, map, Observable, take } from 'rxjs';
 import { BoardFacade } from '../../core/store/board/board.facade';
 import { ProjectFacade } from '../../core/store/project/project.facade';
-import { AddColumnDialogComponent } from './add-column-dialog/add-column-dialog.component';
+import { ColumnEditorDialogComponent, type ColumnEditorDialogResult } from './column-editor-dialog/column-editor-dialog.component';
 import type { TicketDialogResult } from '../../core/interfaces/ticket-dialog.interface';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../core/components/confirm-dialog/confirm-dialog.component';
 import { TicketDialogComponent } from './ticket-dialog/ticket-dialog.component';
@@ -26,7 +26,7 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule,
+    MatMenuModule,
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
@@ -41,6 +41,7 @@ export class BoardComponent implements OnInit {
   readonly board = inject(BoardFacade);
   readonly project = inject(ProjectFacade);
   private readonly dialog = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
 
   columnDropListIds: string[] = [];
   private projectId = '';
@@ -51,7 +52,7 @@ export class BoardComponent implements OnInit {
   constructor() {
     this.project.project$.pipe(
       filter((p) => p !== null),
-      takeUntilDestroyed(),
+      takeUntilDestroyed(this.destroyRef),
     ).subscribe((p) => {
       this.projectId = p.id;
       this.board.loadColumns(p.id);
@@ -59,13 +60,13 @@ export class BoardComponent implements OnInit {
 
     this.board.columns$.pipe(
       filter((cols) => !this.loaded && cols.length > 0),
-      takeUntilDestroyed(),
+      takeUntilDestroyed(this.destroyRef),
     ).subscribe((cols) => {
       this.loaded = true;
       cols.forEach((c) => this.board.loadTickets(c.id));
     });
 
-    this.board.columns$.pipe(takeUntilDestroyed()).subscribe((cols) => {
+    this.board.columns$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((cols) => {
       this.columnDropListIds = cols.map((c) => c.id);
     });
   }
@@ -85,13 +86,24 @@ export class BoardComponent implements OnInit {
     return this.ticketsFor(columnId).pipe(map((tickets) => tickets.length === 0));
   }
 
-  openAddColumnDialog(projectId: string) {
-    const ref = this.dialog.open(AddColumnDialogComponent, { width: '320px' });
-    ref.afterClosed().subscribe((name: string | undefined) => {
-      if (name) {
-        this.board.addColumn(projectId, name);
+  openColumnEditorDialog(column?: BoardColumn) {
+    const ref = this.dialog.open(ColumnEditorDialogComponent, {
+      width: '320px',
+      disableClose: true,
+      data: column,
+    });
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: ColumnEditorDialogResult | undefined) => {
+      if (!result) return;
+      if (column) {
+        this.board.updateColumn(column.id, { name: result.name });
+      } else {
+        this.board.addColumn(this.projectId, result.name);
       }
     });
+  }
+
+  editColumn(column: BoardColumn) {
+    this.openColumnEditorDialog(column);
   }
 
   openCreateTicketDialog(columns: BoardColumn[]) {
@@ -99,7 +111,7 @@ export class BoardComponent implements OnInit {
       width: '480px',
       data: { columns },
     });
-    ref.afterClosed().subscribe((result: TicketDialogResult | undefined) => {
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: TicketDialogResult | undefined) => {
       if (result?.action === 'save' && result.columnId) {
         const tempId = crypto.randomUUID();
         this.board.addTicket(result.columnId, result.title!, result.description, tempId);
@@ -112,7 +124,7 @@ export class BoardComponent implements OnInit {
       width: '480px',
       data: { columns, ticket },
     });
-    ref.afterClosed().subscribe((result: TicketDialogResult | undefined) => {
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: TicketDialogResult | undefined) => {
       if (!result) return;
 
       if (result.action === 'save' && result.columnId) {
@@ -139,7 +151,7 @@ export class BoardComponent implements OnInit {
       width: '400px',
       data,
     });
-    ref.afterClosed().subscribe((confirmed: boolean) => {
+    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((confirmed: boolean) => {
       if (confirmed) {
         this.board.deleteColumn(column.id);
       }

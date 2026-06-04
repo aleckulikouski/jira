@@ -28,7 +28,12 @@ export const addColumn$ = createEffect(
       ofType(BoardActions.addColumn),
       switchMap(({ projectId, name }) =>
         boardService.createColumn(projectId, name).pipe(
-          map((column) => BoardActions.addColumnSuccess({ column })),
+          switchMap((column) =>
+            of(
+              BoardActions.addColumnSuccess({ column }),
+              BoardActions.showSuccess({ message: 'Column created' }),
+            ),
+          ),
           catchError((err) => {
             const msg = err.error?.message ?? 'Failed to add column';
             return of(BoardActions.addColumnFailure({ error: msg }), BoardActions.showError({ message: msg }));
@@ -45,7 +50,12 @@ export const updateColumn$ = createEffect(
       ofType(BoardActions.updateColumn),
       switchMap(({ id, data }) =>
         boardService.updateColumn(id, data).pipe(
-          map((column) => BoardActions.updateColumnSuccess({ column })),
+          switchMap((column) =>
+            of(
+              BoardActions.updateColumnSuccess({ column }),
+              BoardActions.showSuccess({ message: 'Column saved' }),
+            ),
+          ),
           catchError((err) => {
             const msg = err.error?.message ?? 'Failed to update column';
             return of(BoardActions.updateColumnFailure({ error: msg }), BoardActions.showError({ message: msg }));
@@ -62,7 +72,12 @@ export const deleteColumn$ = createEffect(
       ofType(BoardActions.deleteColumn),
       switchMap(({ id }) =>
         boardService.deleteColumn(id).pipe(
-          map(() => BoardActions.deleteColumnSuccess({ id })),
+          switchMap(() =>
+            of(
+              BoardActions.deleteColumnSuccess({ id }),
+              BoardActions.showSuccess({ message: 'Column deleted' }),
+            ),
+          ),
           catchError((err) => {
             const msg = err.error?.message ?? 'Failed to delete column';
             return of(BoardActions.deleteColumnFailure({ error: msg }), BoardActions.showError({ message: msg }));
@@ -159,6 +174,15 @@ export const moveTicket$ = createEffect(
       ),
     ),
   { functional: true },
+);
+
+export const showSuccess$ = createEffect(
+  (actions$ = inject(Actions), snackBar = inject(MatSnackBar)) =>
+    actions$.pipe(
+      ofType(BoardActions.showSuccess),
+      tap(({ message }) => snackBar.open(message, 'Close', { duration: 5000 })),
+    ),
+  { functional: true, dispatch: false },
 );
 
 export const showError$ = createEffect(

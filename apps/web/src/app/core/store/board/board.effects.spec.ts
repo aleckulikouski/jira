@@ -4,9 +4,19 @@ import { of, throwError } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
-import { updateTicket$, deleteTicket$, moveTicket$, reorderColumns$, showError$ } from './board.effects';
+import {
+  addColumn$,
+  updateColumn$,
+  deleteColumn$,
+  updateTicket$,
+  deleteTicket$,
+  moveTicket$,
+  reorderColumns$,
+  showSuccess$,
+  showError$,
+} from './board.effects';
 import { Actions } from '@ngrx/effects';
-import { Ticket } from '@org/shared-types';
+import type { Ticket, BoardColumn } from '@org/shared-types';
 
 const makeTicket = (overrides?: Partial<Ticket>): Ticket => ({
   id: 't-1',
@@ -156,6 +166,103 @@ describe('Board Effects', () => {
         BoardActions.reorderColumnsFailure({ previousOrderedIds, error: 'Conflict' }),
       );
       expect(result[1]).toEqual(BoardActions.showError({ message: 'Conflict' }));
+    });
+  });
+
+  describe('addColumn$', () => {
+    it('should return success and show success snackbar', () => {
+      const column = { id: 'c-new', projectId: 'p-1', name: 'New', order: 0, createdAt: '', updatedAt: '' } as BoardColumn;
+      const boardService = { createColumn: vi.fn().mockReturnValue(of(column)) } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.addColumn({ projectId: 'p-1', name: 'New' })));
+
+      const result: Action[] = [];
+      addColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.addColumnSuccess({ column }));
+      expect(result[1]).toEqual(BoardActions.showSuccess({ message: 'Column created' }));
+    });
+
+    it('should return failure and show error on API error', () => {
+      const boardService = {
+        createColumn: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'Server error' } }))),
+      } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.addColumn({ projectId: 'p-1', name: 'New' })));
+
+      const result: Action[] = [];
+      addColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.addColumnFailure({ error: 'Server error' }));
+      expect(result[1]).toEqual(BoardActions.showError({ message: 'Server error' }));
+    });
+  });
+
+  describe('updateColumn$', () => {
+    it('should return success and show success snackbar', () => {
+      const column = { id: 'c-1', projectId: 'p-1', name: 'Renamed', order: 0, createdAt: '', updatedAt: '' } as BoardColumn;
+      const boardService = { updateColumn: vi.fn().mockReturnValue(of(column)) } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.updateColumn({ id: 'c-1', data: { name: 'Renamed' } })));
+
+      const result: Action[] = [];
+      updateColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.updateColumnSuccess({ column }));
+      expect(result[1]).toEqual(BoardActions.showSuccess({ message: 'Column saved' }));
+    });
+
+    it('should return failure and show error on API error', () => {
+      const boardService = {
+        updateColumn: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'Server error' } }))),
+      } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.updateColumn({ id: 'c-1', data: { name: 'Renamed' } })));
+
+      const result: Action[] = [];
+      updateColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.updateColumnFailure({ error: 'Server error' }));
+      expect(result[1]).toEqual(BoardActions.showError({ message: 'Server error' }));
+    });
+  });
+
+  describe('deleteColumn$', () => {
+    it('should return success and show success snackbar', () => {
+      const boardService = { deleteColumn: vi.fn().mockReturnValue(of(undefined)) } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.deleteColumn({ id: 'c-1' })));
+
+      const result: Action[] = [];
+      deleteColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.deleteColumnSuccess({ id: 'c-1' }));
+      expect(result[1]).toEqual(BoardActions.showSuccess({ message: 'Column deleted' }));
+    });
+
+    it('should return failure and show error on API error', () => {
+      const boardService = {
+        deleteColumn: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'Server error' } }))),
+      } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.deleteColumn({ id: 'c-1' })));
+
+      const result: Action[] = [];
+      deleteColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(BoardActions.deleteColumnFailure({ error: 'Server error' }));
+      expect(result[1]).toEqual(BoardActions.showError({ message: 'Server error' }));
+    });
+  });
+
+  describe('showSuccess$', () => {
+    it('should open snackbar on showSuccess action', () => {
+      const snackBar = { open: vi.fn() } as unknown as MatSnackBar;
+      const actions$ = new Actions(of(BoardActions.showSuccess({ message: 'Column created' })));
+
+      showSuccess$(actions$, snackBar).subscribe();
+
+      expect(snackBar.open).toHaveBeenCalledWith('Column created', 'Close', { duration: 5000 });
     });
   });
 
