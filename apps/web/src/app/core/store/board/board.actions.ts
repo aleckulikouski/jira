@@ -1,4 +1,4 @@
-import { createActionGroup, props } from '@ngrx/store';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { BoardColumn, Ticket } from '@org/shared-types';
 
 export const BoardActions = createActionGroup({
@@ -39,6 +39,10 @@ export const BoardActions = createActionGroup({
     'Move Ticket': props<{ id: string; columnId: string; position: number; previous: Ticket }>(),
     'Move Ticket Success': props<{ ticket: Ticket }>(),
     'Move Ticket Failure': props<{ ticket: Ticket; error: string }>(),
+
+    'Reorder Columns': props<{ projectId: string; orderedIds: string[]; previousOrderedIds: string[] }>(),
+    'Reorder Columns Success': emptyProps(),
+    'Reorder Columns Failure': props<{ previousOrderedIds: string[]; error: string }>(),
 
     'Show Error': props<{ message: string }>(),
   },

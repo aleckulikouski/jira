@@ -71,6 +71,7 @@ describe('Board Reducer - Tickets', () => {
     tickets: [makeTicket(), makeTicket({ id: 't-2', title: 'Second' })],
     loading: false,
     error: null,
+    previousOrderedIds: null,
   };
 
   it('should return initial state', () => {
@@ -170,6 +171,87 @@ describe('Board Reducer - Tickets', () => {
     });
   });
 
+  describe('reorderColumns', () => {
+    const columns = [
+      makeColumn({ id: 'c-1', name: 'First', order: 0 }),
+      makeColumn({ id: 'c-2', name: 'Second', order: 1 }),
+      makeColumn({ id: 'c-3', name: 'Third', order: 2 }),
+    ];
+    const stateWithCols: BoardState = {
+      columns,
+      tickets: [],
+      loading: false,
+      error: null,
+      previousOrderedIds: null,
+    };
+
+    it('should optimistically reorder columns and store previous order', () => {
+      const state = boardReducer(
+        stateWithCols,
+        BoardActions.reorderColumns({
+          projectId: 'p-1',
+          orderedIds: ['c-3', 'c-1', 'c-2'],
+          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
+        }),
+      );
+      expect(state.columns.map((c) => c.id)).toEqual(['c-3', 'c-1', 'c-2']);
+      expect(state.columns[0].order).toBe(0);
+      expect(state.columns[1].order).toBe(1);
+      expect(state.columns[2].order).toBe(2);
+      expect(state.previousOrderedIds).toEqual(['c-1', 'c-2', 'c-3']);
+    });
+
+    it('should clear previousOrderedIds on success', () => {
+      let state = boardReducer(
+        stateWithCols,
+        BoardActions.reorderColumns({
+          projectId: 'p-1',
+          orderedIds: ['c-3', 'c-1', 'c-2'],
+          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
+        }),
+      );
+      expect(state.previousOrderedIds).not.toBeNull();
+
+      state = boardReducer(state, BoardActions.reorderColumnsSuccess());
+      expect(state.previousOrderedIds).toBeNull();
+    });
+
+    it('should roll back to previous order on failure', () => {
+      let state = boardReducer(
+        stateWithCols,
+        BoardActions.reorderColumns({
+          projectId: 'p-1',
+          orderedIds: ['c-3', 'c-1', 'c-2'],
+          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
+        }),
+      );
+      expect(state.columns.map((c) => c.id)).toEqual(['c-3', 'c-1', 'c-2']);
+
+      state = boardReducer(
+        state,
+        BoardActions.reorderColumnsFailure({
+          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
+          error: 'Server error',
+        }),
+      );
+      expect(state.columns.map((c) => c.id)).toEqual(['c-1', 'c-2', 'c-3']);
+      expect(state.error).toBe('Server error');
+      expect(state.previousOrderedIds).toBeNull();
+    });
+
+    it('should clear error on reorderColumns', () => {
+      const state = boardReducer(
+        { ...stateWithCols, error: 'previous error' },
+        BoardActions.reorderColumns({
+          projectId: 'p-1',
+          orderedIds: ['c-3', 'c-2', 'c-1'],
+          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
+        }),
+      );
+      expect(state.error).toBeNull();
+    });
+  });
+
   describe('logout', () => {
     it('should reset board state on logout', () => {
       const populated: BoardState = {
@@ -177,6 +259,7 @@ describe('Board Reducer - Tickets', () => {
         tickets: [makeTicket()],
         loading: false,
         error: null,
+        previousOrderedIds: null,
       };
       const state = boardReducer(populated, UserActions.logout());
       expect(state.columns).toEqual([]);

@@ -31,67 +31,74 @@
         }
       </div>
     } @else {
-      <div class="columns">
-        @for (col of columns; track col.id) {
-          <mat-card
-            class="column"
-          >
-            <mat-card-header>
-              @if (editingColumnId === col.id) {
-                <input
-                  class="rename-input"
-                  [(ngModel)]="editName"
-                  (blur)="saveEdit(col)"
-                  (keyup.enter)="saveEdit(col)"
-                  (keyup.escape)="cancelEdit()"
-                />
-              } @else {
-                <mat-card-title (click)="startEdit(col)" class="column-title">
-                  {{ col.name }}
-                </mat-card-title>
-              }
-              @let empty = (isColumnEmpty(col.id) | async) ?? false;
-                <span class="delete-btn-wrapper"
-                      [matTooltip]="empty ? '' : 'Cannot delete a column that contains tickets'">
-                  <button
-                    mat-icon-button
-                    class="delete-btn"
-                    [disabled]="!empty"
-                    (click)="confirmDelete(col)"
-                    aria-label="Delete column"
-                  >
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </span>
-            </mat-card-header>
-            <mat-card-content
-              cdkDropList
-              [cdkDropListData]="col"
-              [cdkDropListConnectedTo]="columnDropListIds"
-              [id]="col.id"
-              (cdkDropListDropped)="onDrop($event)"
+      <div class="columns" cdkScrollable>
+        <div
+          class="columns-drop-list"
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          [cdkDropListData]="columns"
+          (cdkDropListDropped)="onColumnDrop($event)"
+        >
+          @for (col of columns; track col.id) {
+            <div
+              cdkDrag
+              [cdkDragLockAxis]="'x'"
+              [cdkDragData]="col"
             >
-              @if (ticketsFor(col.id) | async; as colTickets) {
-                @for (ticket of colTickets; track trackByTicketId($index, ticket)) {
-                  <mat-card
-                    class="ticket-card"
-                    appearance="outlined"
-                    cdkDrag
-                    [cdkDragData]="ticket"
-                    (click)="openEditTicketDialog(ticket, columns)"
-                  >
-                    <mat-card-content>{{ ticket.title }}</mat-card-content>
-                    <ng-template cdkDragPlaceholder>
-                      <mat-card class="ticket-card drag-placeholder" appearance="outlined">
+              <mat-card class="column">
+                <mat-card-header>
+                  <mat-card-title class="column-title" cdkDragHandle>
+                    {{ col.name }}
+                  </mat-card-title>
+                  @let empty = (isColumnEmpty(col.id) | async) ?? false;
+                    <span
+                      [matTooltip]="'Cannot delete a column that contains tickets'"
+                      [matTooltipDisabled]="empty"
+                    >
+                      <button
+                        mat-icon-button
+                        class="delete-btn"
+                        [disabled]="!empty"
+                        (click)="confirmDelete(col)"
+                        aria-label="Delete column"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </span>
+                </mat-card-header>
+                <mat-card-content
+                  cdkDropList
+                  [cdkDropListData]="col"
+                  [cdkDropListConnectedTo]="columnDropListIds"
+                  [id]="col.id"
+                  (cdkDropListDropped)="onDrop($event)"
+                >
+                  @if (ticketsFor(col.id) | async; as colTickets) {
+                    @for (ticket of colTickets; track trackByTicketId($index, ticket)) {
+                      <mat-card
+                        class="ticket-card"
+                        appearance="outlined"
+                        cdkDrag
+                        [cdkDragData]="ticket"
+                        (click)="openEditTicketDialog(ticket, columns)"
+                      >
                         <mat-card-content>{{ ticket.title }}</mat-card-content>
+                        <ng-template cdkDragPlaceholder>
+                          <mat-card class="ticket-card drag-placeholder" appearance="outlined">
+                            <mat-card-content>{{ ticket.title }}</mat-card-content>
+                          </mat-card>
+                        </ng-template>
                       </mat-card>
-                    </ng-template>
-                  </mat-card>
-                }
-              }
-            </mat-card-content>
-          </mat-card>
-        }
+                    }
+                  }
+                </mat-card-content>
+              </mat-card>
+              <ng-template cdkDragPlaceholder>
+                <mat-card class="column column-drag-placeholder"></mat-card>
+              </ng-template>
+            </div>
+          }
+        </div>
       </div>
     }
 

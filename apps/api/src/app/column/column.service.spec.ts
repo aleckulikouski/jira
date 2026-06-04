@@ -8,7 +8,10 @@ import { AuthorizationService } from '../auth/authorization.service';
 function makeMockPrisma(txOverrides?: { ticketCount?: number }) {
   const tx = {
     ticket: { count: vi.fn().mockResolvedValue(txOverrides?.ticketCount ?? 0) },
-    boardColumn: { delete: vi.fn().mockResolvedValue(undefined) },
+    boardColumn: {
+      delete: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(undefined),
+    },
   };
 
   const prisma = {
@@ -18,7 +21,12 @@ function makeMockPrisma(txOverrides?: { ticketCount?: number }) {
       create: vi.fn(),
       update: vi.fn(),
     },
-    $transaction: vi.fn((cb: (client: any) => unknown) => cb(tx)),
+    $transaction: vi.fn((cb: ((client: any) => unknown) | any[]) => {
+      if (Array.isArray(cb)) {
+        return Promise.all(cb);
+      }
+      return cb(tx);
+    }),
   };
 
   return { prisma, tx };
@@ -49,6 +57,84 @@ describe('ColumnService', () => {
     }).compile();
 
     service = module.get(ColumnService);
+  });
+
+  describe('reorder', () => {
+    it('updates each column order to its index in orderedIds', async () => {
+      prisma.boardColumn.findMany.mockResolvedValue([
+        { id: 'c-1' },
+        { id: 'c-2' },
+        { id: 'c-3' },
+      ]);
+      tx.boardColumn.update.mockResolvedValue(undefined);
+
+      await service.reorder('p-1', 'user-1', ['c-3', 'c-1', 'c-2']);
+
+      expect(tx.boardColumn.update).toHaveBeenCalledTimes(3);
+      expect(tx.boardColumn.update).toHaveBeenCalledWith({
+        where: { id: 'c-3' },
+        data: { order: 0 },
+      });
+      expect(tx.boardColumn.update).toHaveBeenCalledWith({
+        where: { id: 'c-1' },
+        data: { order: 1 },
+      });
+      expect(tx.boardColumn.update).toHaveBeenCalledWith({
+        where: { id: 'c-2' },
+        data: { order: 2 },
+      });
+    });
+
+    it('throws ConflictException when orderedIds has wrong columns', async () => {
+      prisma.boardColumn.findMany.mockResolvedValue([
+        { id: 'c-1' },
+        { id: 'c-2' },
+      ]);
+
+      await expect(
+        service.reorder('p-1', 'user-1', ['c-1', 'c-3']),
+      ).rejects.toThrow(ConflictException);
+
+      await expect(
+        service.reorder('p-1', 'user-1', ['c-1', 'c-3']),
+      ).rejects.toThrow('Column IDs do not match project columns');
+    });
+
+    it('throws ConflictException when orderedIds is missing a column', async () => {
+      prisma.boardColumn.findMany.mockResolvedValue([
+        { id: 'c-1' },
+        { id: 'c-2' },
+        { id: 'c-3' },
+      ]);
+
+      await expect(
+        service.reorder('p-1', 'user-1', ['c-1', 'c-3']),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('throws ConflictException when orderedIds contains duplicates', async () => {
+      prisma.boardColumn.findMany.mockResolvedValue([
+        { id: 'c-1' },
+        { id: 'c-2' },
+        { id: 'c-3' },
+      ]);
+
+      await expect(
+        service.reorder('p-1', 'user-1', ['c-1', 'c-1', 'c-2', 'c-3']),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('verifies the user owns the project before reordering', async () => {
+      prisma.boardColumn.findMany.mockResolvedValue([
+        { id: 'c-1' },
+        { id: 'c-2' },
+      ]);
+      tx.boardColumn.update.mockResolvedValue(undefined);
+
+      await service.reorder('p-1', 'user-1', ['c-2', 'c-1']);
+
+      expect(auth.project).toHaveBeenCalledWith('p-1', 'user-1');
+    });
   });
 
   describe('delete', () => {

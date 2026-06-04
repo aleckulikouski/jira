@@ -54,4 +54,11 @@ export class BoardService {
   deleteTicket(id: string) {
     return this.http.delete(`${this.base}/tickets/${id}`);
   }
+
+  reorderColumns(projectId: string, orderedIds: string[]) {
+    return this.http.patch<{ statusCode: number }>(
+      `${this.base}/projects/${projectId}/columns/reorder`,
+      { orderedIds },
+    );
+  }
 }

@@ -48,6 +48,10 @@ export class BoardFacade {
     this.store.dispatch(BoardActions.moveTicket({ id, columnId, position, previous }));
   }
 
+  reorderColumns(projectId: string, orderedIds: string[], previousOrderedIds: string[]) {
+    this.store.dispatch(BoardActions.reorderColumns({ projectId, orderedIds, previousOrderedIds }));
+  }
+
   ticketsByColumn(columnId: string) {
     return this.store.select(selectTicketsByColumn(columnId));
   }

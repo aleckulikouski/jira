@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
-import { updateTicket$, deleteTicket$, moveTicket$, showError$ } from './board.effects';
+import { updateTicket$, deleteTicket$, moveTicket$, reorderColumns$, showError$ } from './board.effects';
 import { Actions } from '@ngrx/effects';
 import { Ticket } from '@org/shared-types';
 
@@ -110,6 +110,52 @@ describe('Board Effects', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual(BoardActions.moveTicketFailure({ ticket: previous, error: 'Server error' }));
       expect(result[1]).toEqual(BoardActions.showError({ message: 'Server error' }));
+    });
+  });
+
+  describe('reorderColumns$', () => {
+    const previousOrderedIds = ['c-1', 'c-2', 'c-3'];
+
+    it('should call boardService.reorderColumns and return success', () => {
+      const boardService = {
+        reorderColumns: vi.fn().mockReturnValue(of({ statusCode: 200 })),
+      } as unknown as BoardService;
+      const actions$ = new Actions(
+        of(BoardActions.reorderColumns({
+          projectId: 'p-1',
+          orderedIds: ['c-3', 'c-1', 'c-2'],
+          previousOrderedIds,
+        })),
+      );
+
+      const result: Action[] = [];
+      reorderColumns$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(BoardActions.reorderColumnsSuccess());
+      expect(boardService.reorderColumns).toHaveBeenCalledWith('p-1', ['c-3', 'c-1', 'c-2']);
+    });
+
+    it('should return failure with previousOrderedIds and show error on API error', () => {
+      const boardService = {
+        reorderColumns: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'Conflict' } }))),
+      } as unknown as BoardService;
+      const actions$ = new Actions(
+        of(BoardActions.reorderColumns({
+          projectId: 'p-1',
+          orderedIds: ['c-3', 'c-1', 'c-2'],
+          previousOrderedIds,
+        })),
+      );
+
+      const result: Action[] = [];
+      reorderColumns$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(
+        BoardActions.reorderColumnsFailure({ previousOrderedIds, error: 'Conflict' }),
+      );
+      expect(result[1]).toEqual(BoardActions.showError({ message: 'Conflict' }));
     });
   });
 

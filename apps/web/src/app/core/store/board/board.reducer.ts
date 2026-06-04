@@ -8,6 +8,7 @@ export interface BoardState {
   tickets: Ticket[];
   loading: boolean;
   error: string | null;
+  previousOrderedIds: string[] | null;
 }
 
 const initialState: BoardState = {
@@ -15,6 +16,7 @@ const initialState: BoardState = {
   tickets: [],
   loading: false,
   error: null,
+  previousOrderedIds: null,
 };
 
 export const boardReducer = createReducer(
@@ -163,4 +165,31 @@ export const boardReducer = createReducer(
     tickets: state.tickets.map((t) => (t.id === ticket.id ? { ...ticket } : t)),
     error,
   })),
+
+  on(BoardActions.reorderColumns, (state, { orderedIds, previousOrderedIds }) => {
+    const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
+    return {
+      ...state,
+      error: null,
+      columns: state.columns
+        .map((c) => ({ ...c, order: orderMap.get(c.id) ?? c.order }))
+        .sort((a, b) => a.order - b.order),
+      previousOrderedIds,
+    };
+  }),
+  on(BoardActions.reorderColumnsSuccess, (state) => ({
+    ...state,
+    previousOrderedIds: null,
+  })),
+  on(BoardActions.reorderColumnsFailure, (state, { previousOrderedIds, error }) => {
+    const orderMap = new Map(previousOrderedIds.map((id, i) => [id, i]));
+    return {
+      ...state,
+      columns: state.columns
+        .map((c) => ({ ...c, order: orderMap.get(c.id) ?? c.order }))
+        .sort((a, b) => a.order - b.order),
+      previousOrderedIds: null,
+      error,
+    };
+  }),
 );

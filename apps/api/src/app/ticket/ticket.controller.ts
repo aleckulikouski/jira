@@ -1,13 +1,9 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { RequestWithUser } from '../auth/auth.types';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
-
-interface RequestWithUser extends ExpressRequest {
-  user: { id: string; email: string };
-}
 
 @Controller()
 export class TicketController {

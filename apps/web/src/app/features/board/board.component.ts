@@ -6,9 +6,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
-import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { CdkDropList, CdkDrag, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import { filter, map, Observable, take } from 'rxjs';
 import { BoardFacade } from '../../core/store/board/board.facade';
 import { ProjectFacade } from '../../core/store/project/project.facade';
@@ -26,11 +26,12 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatInputModule,
     MatTooltipModule,
     CdkDropList,
     CdkDrag,
+    CdkDragHandle,
     CdkDragPlaceholder,
+    CdkScrollable,
   ],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
@@ -41,9 +42,8 @@ export class BoardComponent implements OnInit {
   readonly project = inject(ProjectFacade);
   private readonly dialog = inject(MatDialog);
 
-  editingColumnId: string | null = null;
-  editName = '';
   columnDropListIds: string[] = [];
+  private projectId = '';
 
   private readonly ticketSelectors = new Map<string, Observable<Ticket[]>>();
   private loaded = false;
@@ -53,6 +53,7 @@ export class BoardComponent implements OnInit {
       filter((p) => p !== null),
       takeUntilDestroyed(),
     ).subscribe((p) => {
+      this.projectId = p.id;
       this.board.loadColumns(p.id);
     });
 
@@ -82,23 +83,6 @@ export class BoardComponent implements OnInit {
 
   isColumnEmpty(columnId: string): Observable<boolean> {
     return this.ticketsFor(columnId).pipe(map((tickets) => tickets.length === 0));
-  }
-
-  startEdit(column: BoardColumn) {
-    this.editingColumnId = column.id;
-    this.editName = column.name;
-  }
-
-  saveEdit(column: BoardColumn) {
-    const name = this.editName.trim();
-    if (name && name !== column.name) {
-      this.board.updateColumn(column.id, { name });
-    }
-    this.editingColumnId = null;
-  }
-
-  cancelEdit() {
-    this.editingColumnId = null;
   }
 
   openAddColumnDialog(projectId: string) {
@@ -236,5 +220,22 @@ export class BoardComponent implements OnInit {
 
     // Dispatch optimistic move
     this.board.moveTicket(ticket.id, targetColumn.id, newPosition, previous);
+  }
+
+  onColumnDrop(event: CdkDragDrop<BoardColumn[], BoardColumn[], BoardColumn>) {
+    const column = event.item.data;
+    const columns = event.container.data;
+
+    // No-op: dropped in same position
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    const previousOrderedIds = columns.map((c) => c.id);
+    const orderedIds = [...previousOrderedIds];
+    orderedIds.splice(event.previousIndex, 1);
+    orderedIds.splice(event.currentIndex, 0, column.id);
+
+    this.board.reorderColumns(this.projectId, orderedIds, previousOrderedIds);
   }
 }

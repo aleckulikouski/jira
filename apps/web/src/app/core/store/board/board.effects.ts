@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { catchError, map, mergeMap, of, switchMap, tap } from 'rxjs';
+import { catchError, concatMap, map, mergeMap, of, switchMap, tap } from 'rxjs';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
 
@@ -168,4 +168,24 @@ export const showError$ = createEffect(
       tap(({ message }) => snackBar.open(message, 'Close', { duration: 5000 })),
     ),
   { functional: true, dispatch: false },
+);
+
+export const reorderColumns$ = createEffect(
+  (actions$ = inject(Actions), boardService = inject(BoardService)) =>
+    actions$.pipe(
+      ofType(BoardActions.reorderColumns),
+      concatMap(({ projectId, orderedIds, previousOrderedIds }) =>
+        boardService.reorderColumns(projectId, orderedIds).pipe(
+          map(() => BoardActions.reorderColumnsSuccess()),
+          catchError((err) => {
+            const msg = err.error?.message ?? 'Failed to reorder columns';
+            return of(
+              BoardActions.reorderColumnsFailure({ previousOrderedIds, error: msg }),
+              BoardActions.showError({ message: msg }),
+            );
+          }),
+        ),
+      ),
+    ),
+  { functional: true },
 );

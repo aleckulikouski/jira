@@ -53,4 +53,33 @@ export class ColumnService {
       await tx.boardColumn.delete({ where: { id: columnId } });
     });
   }
+
+  async reorder(projectId: string, userId: string, orderedIds: string[]) {
+    await this.auth.project(projectId, userId);
+
+    const existingColumns = await this.prisma.boardColumn.findMany({
+      where: { projectId },
+      select: { id: true },
+    });
+    const existingIds = existingColumns.map((c) => c.id);
+    const existingSet = new Set(existingIds);
+    const orderedSet = new Set(orderedIds);
+
+    if (
+      orderedIds.length !== existingIds.length ||
+      existingSet.size !== orderedSet.size ||
+      existingIds.some((id) => !orderedSet.has(id))
+    ) {
+      throw new ConflictException('Column IDs do not match project columns');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const [index, id] of orderedIds.entries()) {
+        await tx.boardColumn.update({
+          where: { id },
+          data: { order: index },
+        });
+      }
+    });
+  }
 }

@@ -50,12 +50,28 @@ h2 {
 
 .columns {
   display: flex;
-  gap: 16px;
-  align-items: stretch;
+  flex-direction: column;
   overflow-x: auto;
   padding-bottom: 8px;
   flex: 1;
   min-height: 0;
+}
+
+.columns-drop-list {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+
+  > [cdkDrag] {
+    display: flex;
+    align-items: stretch;
+  }
+
+  &.cdk-drop-list-dragging .column:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
 }
 
 .column {
@@ -76,10 +92,6 @@ h2 {
     position: relative;
     flex-shrink: 0;
 
-    ::ng-deep .mat-mdc-card-header-text {
-      flex: 1;
-      min-width: 0;
-    }
   }
 
   mat-card-content {
@@ -90,31 +102,14 @@ h2 {
 }
 
 .column-title {
-  cursor: pointer;
+  cursor: grab;
   padding: 4px 0;
-  border-bottom: 2px solid transparent;
-
-  &:hover {
-    border-bottom-color: #999;
-  }
+  flex: 1;
+  min-width: 0;
 }
 
-.rename-input {
-  font-size: 16px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border: 2px solid #1976d2;
-  border-radius: 4px;
-  outline: none;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.delete-btn-wrapper {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
+.delete-btn {
+  flex-shrink: 0;
 }
 
 .add-column-btn {
@@ -152,6 +147,13 @@ h2 {
 
 .column .cdk-drop-list-dragging .ticket-card:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.column-drag-placeholder {
+  border: 2px dashed #1976d2 !important;
+  background: rgba(25, 118, 210, 0.05) !important;
+  min-height: 100px;
+  opacity: 0.4;
 }
 
 .fab {

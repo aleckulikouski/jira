@@ -3,7 +3,11 @@ import type { BoardState } from './board.reducer';
 
 export const selectBoardState = createFeatureSelector<BoardState>('board');
 
-export const selectColumns = createSelector(selectBoardState, (s) => s.columns);
+export const selectColumns = createSelector(selectBoardState, (s) => {
+  const cols = s.columns;
+  const sorted = cols.every((c, i) => i === 0 || c.order >= cols[i - 1].order);
+  return sorted ? cols : [...cols].sort((a, b) => a.order - b.order);
+});
 export const selectBoardLoading = createSelector(selectBoardState, (s) => s.loading);
 export const selectBoardError = createSelector(selectBoardState, (s) => s.error);
 
