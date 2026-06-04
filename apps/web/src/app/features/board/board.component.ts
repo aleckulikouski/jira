@@ -125,7 +125,7 @@ export class BoardComponent implements OnInit {
   openEditTicketDialog(ticket: Ticket, columns: BoardColumn[]) {
     const ref = this.dialog.open(TicketDialogComponent, {
       width: '480px',
-      data: { columns, ticket },
+      data: { columns, ticket, selectedColumnId: ticket.columnId },
     });
     ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: TicketDialogResult | undefined) => {
       if (!result) return;

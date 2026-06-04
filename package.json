@@ -5,7 +5,8 @@
   "scripts": {
     "start": "bash scripts/start-dev.sh",
     "dev": "bash scripts/start-dev.sh",
-    "stop": "bash scripts/stop-dev.sh"
+    "stop": "bash scripts/stop-dev.sh",
+    "restart": "npm run stop && npm run start"
   },
   "private": true,
   "devDependencies": {

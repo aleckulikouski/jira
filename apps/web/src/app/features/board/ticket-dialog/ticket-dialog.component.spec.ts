@@ -54,8 +54,7 @@ describe('TicketDialogComponent', () => {
       expect(fixture.componentInstance.isEdit).toBe(false);
     });
 
-    it('should fall back to first column when selectedColumnId is absent', async () => {
-      // Re-configure with no selectedColumnId
+    it('should use first column when selectedColumnId matches no known column', async () => {
       TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
         imports: [TicketDialogComponent],
@@ -65,13 +64,13 @@ describe('TicketDialogComponent', () => {
           { provide: MatDialog, useValue: { open: vi.fn().mockReturnValue({ afterClosed: () => of(false) }) } },
           {
             provide: MAT_DIALOG_DATA,
-            useValue: { columns: makeColumns() } satisfies TicketDialogData,
+            useValue: { columns: makeColumns(), selectedColumnId: 'c-unknown' } satisfies TicketDialogData,
           },
         ],
       }).compileComponents();
       const fallbackFixture = TestBed.createComponent(TicketDialogComponent);
       fallbackFixture.detectChanges();
-      expect(fallbackFixture.componentInstance.columnId).toBe('c-1');
+      expect(fallbackFixture.componentInstance.columnId).toBe('c-unknown');
     });
 
     it('should show "New Ticket" title', () => {
@@ -131,7 +130,7 @@ describe('TicketDialogComponent', () => {
           { provide: MatDialog, useValue: mockDialog },
           {
             provide: MAT_DIALOG_DATA,
-            useValue: { columns: makeColumns(), ticket } satisfies TicketDialogData,
+            useValue: { columns: makeColumns(), ticket, selectedColumnId: ticket.columnId } satisfies TicketDialogData,
           },
         ],
       }).compileComponents();
