@@ -1,5 +1,6 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { BoardColumn, Ticket } from '@org/shared-types';
+import type { AddColumnData } from '../../interfaces/board.interface';
 
 export const BoardActions = createActionGroup({
   source: 'Board',
@@ -8,8 +9,8 @@ export const BoardActions = createActionGroup({
     'Load Columns Success': props<{ columns: BoardColumn[] }>(),
     'Load Columns Failure': props<{ error: string }>(),
 
-    'Add Column': props<{ projectId: string; name: string }>(),
-    'Add Column Success': props<{ column: BoardColumn }>(),
+    'Add Column': props<AddColumnData>(),
+    'Add Column Success': props<{ columns: BoardColumn[] }>(),
     'Add Column Failure': props<{ error: string }>(),
 
     'Update Column': props<{ id: string; data: { name?: string; order?: number } }>(),

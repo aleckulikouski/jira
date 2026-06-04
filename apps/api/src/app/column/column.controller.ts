@@ -23,7 +23,7 @@ export class ColumnController {
     @Body() dto: CreateColumnDto,
     @Request() req: RequestWithUser,
   ) {
-    return this.columnService.create(projectId, req.user.id, dto.name);
+    return this.columnService.create(projectId, req.user.id, dto.name, dto.afterColumnId);
   }
 
   @Patch('projects/:projectId/columns/reorder')

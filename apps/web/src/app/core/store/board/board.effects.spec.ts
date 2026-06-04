@@ -171,16 +171,35 @@ describe('Board Effects', () => {
 
   describe('addColumn$', () => {
     it('should return success and show success snackbar', () => {
-      const column = { id: 'c-new', projectId: 'p-1', name: 'New', order: 0, createdAt: '', updatedAt: '' } as BoardColumn;
-      const boardService = { createColumn: vi.fn().mockReturnValue(of(column)) } as unknown as BoardService;
+      const columns = [
+        { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: '', updatedAt: '' },
+        { id: 'c-new', projectId: 'p-1', name: 'New', order: 1, createdAt: '', updatedAt: '' },
+      ] as BoardColumn[];
+      const boardService = { createColumn: vi.fn().mockReturnValue(of(columns)) } as unknown as BoardService;
       const actions$ = new Actions(of(BoardActions.addColumn({ projectId: 'p-1', name: 'New' })));
 
       const result: Action[] = [];
       addColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual(BoardActions.addColumnSuccess({ column }));
+      expect(result[0]).toEqual(BoardActions.addColumnSuccess({ columns }));
       expect(result[1]).toEqual(BoardActions.showSuccess({ message: 'Column created' }));
+      expect(boardService.createColumn).toHaveBeenCalledWith('p-1', 'New', undefined);
+    });
+
+    it('should thread afterColumnId to the service', () => {
+      const columns = [
+        { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: '', updatedAt: '' },
+        { id: 'c-new', projectId: 'p-1', name: 'New', order: 1, createdAt: '', updatedAt: '' },
+      ] as BoardColumn[];
+      const boardService = { createColumn: vi.fn().mockReturnValue(of(columns)) } as unknown as BoardService;
+      const actions$ = new Actions(of(BoardActions.addColumn({ projectId: 'p-1', name: 'New', afterColumnId: 'c-1' })));
+
+      const result: Action[] = [];
+      addColumn$(actions$, boardService).subscribe((a) => result.push(a as Action));
+
+      expect(boardService.createColumn).toHaveBeenCalledWith('p-1', 'New', 'c-1');
+      expect(result[0]).toEqual(BoardActions.addColumnSuccess({ columns }));
     });
 
     it('should return failure and show error on API error', () => {

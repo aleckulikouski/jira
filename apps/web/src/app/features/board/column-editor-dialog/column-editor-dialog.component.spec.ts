@@ -4,6 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { ColumnEditorDialogComponent } from './column-editor-dialog.component';
+import type { ColumnEditorDialogData } from '../../../core/interfaces/column-editor-dialog.interface';
 import type { BoardColumn } from '@org/shared-types';
 
 function makeColumn(overrides?: Partial<BoardColumn>): BoardColumn {
@@ -18,6 +19,10 @@ function makeColumn(overrides?: Partial<BoardColumn>): BoardColumn {
   };
 }
 
+function makeData(overrides?: Partial<ColumnEditorDialogData>): ColumnEditorDialogData {
+  return { ...overrides };
+}
+
 describe('ColumnEditorDialogComponent', () => {
   let fixture: ComponentFixture<ColumnEditorDialogComponent>;
   let backdropClick$: Subject<MouseEvent>;
@@ -26,7 +31,7 @@ describe('ColumnEditorDialogComponent', () => {
   let dialogOpen: ReturnType<typeof vi.fn>;
   let afterClosed: Subject<boolean>;
 
-  function setup(data: BoardColumn | undefined) {
+  function setup(data: ColumnEditorDialogData) {
     backdropClick$ = new Subject<MouseEvent>();
     keydownEvents$ = new Subject<KeyboardEvent>();
     dialogRefClose = vi.fn();
@@ -80,22 +85,22 @@ describe('ColumnEditorDialogComponent', () => {
     fixture.detectChanges();
   }
 
-  describe('add mode (no BoardColumn data)', () => {
+  describe('add mode (empty data)', () => {
     beforeEach(async () => {
-      await setup(undefined);
+      await setup(makeData());
       create();
     });
 
-    it('should have title "Add Column"', () => {
-      expect(getTitle()).toBe('Add Column');
+    it('should have title "New Column"', () => {
+      expect(getTitle()).toBe('New Column');
     });
 
     it('should have an empty name field', () => {
       expect(getNameInput().value).toBe('');
     });
 
-    it('should have submit button labeled "Add"', () => {
-      expect(getSubmitButton().textContent?.trim()).toBe('Add');
+    it('should have submit button labeled "Save"', () => {
+      expect(getSubmitButton().textContent?.trim()).toBe('Save');
     });
 
     it('should disable submit button when name is empty', () => {
@@ -115,7 +120,7 @@ describe('ColumnEditorDialogComponent', () => {
     it('should close with trimmed name on submit', () => {
       setInputValue('  New Column  ');
       getSubmitButton().click();
-      expect(dialogRefClose).toHaveBeenCalledWith({ name: 'New Column' });
+      expect(dialogRefClose).toHaveBeenCalledWith({ name: 'New Column', afterColumnId: undefined });
     });
 
     it('should close on cancel button click', () => {
@@ -134,11 +139,30 @@ describe('ColumnEditorDialogComponent', () => {
     });
   });
 
-  describe('edit mode (BoardColumn data passed)', () => {
+  describe('add mode with afterColumnId (no column)', () => {
+    beforeEach(async () => {
+      await setup(makeData({ afterColumnId: 'c-target' }));
+      create();
+    });
+
+    it('should be in create mode when only afterColumnId is provided', () => {
+      expect(getTitle()).toBe('New Column');
+      expect(getSubmitButton().textContent?.trim()).toBe('Save');
+      expect(getNameInput().value).toBe('');
+    });
+
+    it('should echo afterColumnId in the result on submit', () => {
+      setInputValue('New Col');
+      getSubmitButton().click();
+      expect(dialogRefClose).toHaveBeenCalledWith({ name: 'New Col', afterColumnId: 'c-target' });
+    });
+  });
+
+  describe('edit mode (column data passed)', () => {
     const column = makeColumn({ id: 'c-1', name: 'To Do' });
 
     beforeEach(async () => {
-      await setup(column);
+      await setup(makeData({ column }));
       create();
     });
 
@@ -165,10 +189,10 @@ describe('ColumnEditorDialogComponent', () => {
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('should close with id and new name when name is changed', () => {
+    it('should close with id, name, and afterColumnId when name is changed', () => {
       setInputValue('In Progress');
       getSubmitButton().click();
-      expect(dialogRefClose).toHaveBeenCalledWith({ id: 'c-1', name: 'In Progress' });
+      expect(dialogRefClose).toHaveBeenCalledWith({ id: 'c-1', name: 'In Progress', afterColumnId: undefined });
     });
 
     it('should disable submit button when name is empty', () => {

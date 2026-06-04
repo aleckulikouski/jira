@@ -1,15 +1,6 @@
 <div class="board-container">
   <div class="project-header">
     <h2>{{ (project.project$ | async)?.name }}</h2>
-    @if (project.project$ | async; as project) {
-      <button
-        mat-stroked-button
-        class="add-column-btn"
-        (click)="openColumnEditorDialog()"
-      >
-        <mat-icon>add</mat-icon> Add column
-      </button>
-    }
   </div>
 
   @if (board.loading$ | async) {
@@ -24,11 +15,9 @@
     @if (columns.length === 0) {
       <div class="empty-state">
         <p>No columns yet. Create your first column to get started.</p>
-        @if (project.project$ | async; as project) {
-          <button mat-flat-button color="primary" (click)="openColumnEditorDialog()">
-            Add Column
-          </button>
-        }
+        <button mat-flat-button color="primary" (click)="openColumnEditorDialog()">
+          <mat-icon>add</mat-icon> Add column
+        </button>
       </div>
     } @else {
       <div class="columns" cdkScrollable>
@@ -62,12 +51,29 @@
                   <mat-menu #columnMenu="matMenu">
                     <button
                       mat-menu-item
+                      (click)="openCreateTicketDialog(columns, col.id)"
+                      [attr.aria-label]="'New ticket in ' + col.name"
+                    >
+                      <mat-icon>note_add</mat-icon>
+                      <span>New ticket</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="openColumnEditorDialog(undefined, col.id)"
+                      [attr.aria-label]="'Add column after ' + col.name"
+                    >
+                      <mat-icon>add</mat-icon>
+                      <span>Add column</span>
+                    </button>
+                    <button
+                      mat-menu-item
                       (click)="editColumn(col)"
                       [attr.aria-label]="'Edit ' + col.name + ' column'"
                     >
                       <mat-icon>edit</mat-icon>
                       <span>Edit</span>
                     </button>
+                    <mat-divider></mat-divider>
                     <button
                       mat-menu-item
                       [disabled]="!empty"
@@ -118,15 +124,5 @@
         </div>
       </div>
     }
-
-    <button
-      mat-fab
-      color="primary"
-      class="fab"
-      (click)="openCreateTicketDialog(columns)"
-      aria-label="Create ticket"
-    >
-      <mat-icon>add</mat-icon>
-    </button>
   }
 </div>

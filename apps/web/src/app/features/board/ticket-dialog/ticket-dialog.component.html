@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ isEdit ? 'Edit' : 'Create' }} Ticket</h2>
+<h2 mat-dialog-title>{{ isEdit ? 'Edit' : 'New' }} Ticket</h2>
 
 <mat-dialog-content>
   <mat-form-field appearance="outline" class="full-width">
@@ -28,7 +28,7 @@
   <div>
     <button mat-button mat-dialog-close>Cancel</button>
     <button mat-flat-button color="primary" (click)="submit()" [disabled]="!title.trim() || !columnId">
-      {{ isEdit ? 'Save' : 'Create' }}
+      Save
     </button>
   </div>
 </mat-dialog-actions>

@@ -43,7 +43,7 @@ export class TicketDialogComponent {
       this.description = this.data.ticket.description ?? '';
       this.columnId = this.data.ticket.columnId;
     } else {
-      this.columnId = this.data.columns[0]?.id ?? '';
+      this.columnId = this.data.selectedColumnId ?? this.data.columns[0]?.id ?? '';
     }
   }
 

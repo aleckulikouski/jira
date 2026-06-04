@@ -3,6 +3,7 @@ import { Store } from '@ngrx/store';
 import { BoardActions } from './board.actions';
 import { selectColumns, selectBoardLoading, selectBoardError, selectTicketsByColumn, selectTickets } from './board.selectors';
 import type { Ticket } from '@org/shared-types';
+import type { AddColumnData } from '../../interfaces/board.interface';
 
 @Injectable({ providedIn: 'root' })
 export class BoardFacade {
@@ -16,8 +17,8 @@ export class BoardFacade {
     this.store.dispatch(BoardActions.loadColumns({ projectId }));
   }
 
-  addColumn(projectId: string, name: string) {
-    this.store.dispatch(BoardActions.addColumn({ projectId, name }));
+  addColumn(data: AddColumnData) {
+    this.store.dispatch(BoardActions.addColumn(data));
   }
 
   updateColumn(id: string, data: { name?: string; order?: number }) {

@@ -150,12 +150,32 @@ describe('BoardComponent', () => {
       expect(items.length).toBeGreaterThan(0);
     });
 
-    it('should have Edit and Delete menu items', () => {
+    it('should have all menu items in correct order', () => {
       openMenu(getMenuTriggers()[0]);
       const items = Array.from(getOverlayMenuItems());
       const labels = items.map((i) => i.textContent?.trim());
-      expect(labels.some((l) => l?.includes('Edit'))).toBe(true);
-      expect(labels.some((l) => l?.includes('Delete'))).toBe(true);
+      expect(labels).toHaveLength(4);
+      expect(labels[0]).toContain('New ticket');
+      expect(labels[1]).toContain('Add column');
+      expect(labels[2]).toContain('Edit');
+      expect(labels[3]).toContain('Delete');
+    });
+
+    it('should have correct icons for each menu item', () => {
+      openMenu(getMenuTriggers()[0]);
+      const items = Array.from(getOverlayMenuItems());
+      const icons = items.map((i) => i.querySelector('mat-icon')?.textContent?.trim());
+      expect(icons[0]).toBe('note_add');
+      expect(icons[1]).toBe('add');
+      expect(icons[2]).toBe('edit');
+      expect(icons[3]).toBe('delete');
+    });
+
+    it('should have a separator before Delete', () => {
+      openMenu(getMenuTriggers()[0]);
+      const container = overlayContainer.getContainerElement();
+      const divider = container.querySelector('mat-divider');
+      expect(divider).toBeTruthy();
     });
 
     it('should have contextual aria-label on Edit item', () => {
@@ -217,6 +237,61 @@ describe('BoardComponent', () => {
       const deleteItem = items.find((i) => i.getAttribute('aria-label')?.startsWith('Delete'));
       (deleteItem as HTMLElement)?.click();
       expect(dialogOpen).toHaveBeenCalled();
+    });
+
+    it('should open ticket dialog with selectedColumnId when New ticket is clicked', () => {
+      openMenu(getMenuTriggers()[0]);
+      const items = Array.from(getOverlayMenuItems());
+      const newTicketItem = items.find((i) => i.getAttribute('aria-label')?.startsWith('New ticket'));
+      (newTicketItem as HTMLElement)?.click();
+      expect(dialogOpen).toHaveBeenCalled();
+      // Verify dialog data includes selectedColumnId set to the column id
+      const callArgs = dialogOpen.mock.calls[dialogOpen.mock.calls.length - 1];
+      expect(callArgs[1]?.data?.selectedColumnId).toBe('c-empty');
+    });
+
+    it('should open column editor dialog with afterColumnId when Add column is clicked', () => {
+      openMenu(getMenuTriggers()[0]);
+      const items = Array.from(getOverlayMenuItems());
+      const addColItem = items.find((i) => i.getAttribute('aria-label')?.startsWith('Add column'));
+      (addColItem as HTMLElement)?.click();
+      expect(dialogOpen).toHaveBeenCalled();
+      const callArgs = dialogOpen.mock.calls[dialogOpen.mock.calls.length - 1];
+      expect(callArgs[1]?.data?.afterColumnId).toBe('c-empty');
+    });
+  });
+
+  describe('removed elements', () => {
+    beforeEach(async () => {
+      await setup([makeColumn()], []);
+      create();
+    });
+
+    it('should not have a FAB', () => {
+      const fab = fixture.nativeElement.querySelector('.fab');
+      expect(fab).toBeNull();
+    });
+
+    it('should not have header Add column button', () => {
+      const headerBtn = fixture.nativeElement.querySelector('.add-column-btn');
+      expect(headerBtn).toBeNull();
+    });
+  });
+
+  describe('empty state', () => {
+    beforeEach(async () => {
+      await setup([], []);
+      create();
+    });
+
+    it('should show a centered Add column button with icon', () => {
+      const emptyState = fixture.nativeElement.querySelector('.empty-state');
+      expect(emptyState).toBeTruthy();
+      const btn = emptyState.querySelector('button');
+      expect(btn).toBeTruthy();
+      expect(btn.textContent?.trim()).toContain('Add column');
+      const icon = btn.querySelector('mat-icon');
+      expect(icon?.textContent?.trim()).toBe('add');
     });
   });
 });

@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ isEditMode ? 'Edit Column' : 'Add Column' }}</h2>
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit Column' : 'New Column' }}</h2>
 <mat-dialog-content>
   <mat-form-field appearance="outline" class="full-width">
     <mat-label>Column name</mat-label>
@@ -8,6 +8,6 @@
 <mat-dialog-actions align="end">
   <button mat-button (click)="cancel()">Cancel</button>
   <button mat-flat-button color="primary" [disabled]="!name.trim()" (click)="submit()">
-    {{ isEditMode ? 'Save' : 'Add' }}
+    Save
   </button>
 </mat-dialog-actions>

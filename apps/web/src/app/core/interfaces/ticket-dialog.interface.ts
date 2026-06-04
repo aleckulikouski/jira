@@ -4,6 +4,7 @@ import type { BoardColumn, Ticket } from '@org/shared-types';
 export interface TicketDialogData {
   columns: BoardColumn[];
   ticket?: Ticket;
+  selectedColumnId: string;
 }
 
 /** Result returned when the ticket dialog closes */

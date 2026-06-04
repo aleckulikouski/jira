@@ -6,13 +6,15 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { filter, map, Observable, take } from 'rxjs';
 import { BoardFacade } from '../../core/store/board/board.facade';
 import { ProjectFacade } from '../../core/store/project/project.facade';
-import { ColumnEditorDialogComponent, type ColumnEditorDialogResult } from './column-editor-dialog/column-editor-dialog.component';
+import { ColumnEditorDialogComponent } from './column-editor-dialog/column-editor-dialog.component';
+import type { ColumnEditorDialogResult } from '../../core/interfaces/column-editor-dialog.interface';
 import type { TicketDialogResult } from '../../core/interfaces/ticket-dialog.interface';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../core/components/confirm-dialog/confirm-dialog.component';
 import { TicketDialogComponent } from './ticket-dialog/ticket-dialog.component';
@@ -26,6 +28,7 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
+    MatDividerModule,
     MatMenuModule,
     CdkDropList,
     CdkDrag,
@@ -86,18 +89,18 @@ export class BoardComponent implements OnInit {
     return this.ticketsFor(columnId).pipe(map((tickets) => tickets.length === 0));
   }
 
-  openColumnEditorDialog(column?: BoardColumn) {
+  openColumnEditorDialog(column?: BoardColumn, afterColumnId?: string) {
     const ref = this.dialog.open(ColumnEditorDialogComponent, {
       width: '320px',
       disableClose: true,
-      data: column,
+      data: { column, afterColumnId },
     });
     ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: ColumnEditorDialogResult | undefined) => {
       if (!result) return;
       if (column) {
         this.board.updateColumn(column.id, { name: result.name });
       } else {
-        this.board.addColumn(this.projectId, result.name);
+        this.board.addColumn({ projectId: this.projectId, name: result.name, afterColumnId: result.afterColumnId });
       }
     });
   }
@@ -106,10 +109,10 @@ export class BoardComponent implements OnInit {
     this.openColumnEditorDialog(column);
   }
 
-  openCreateTicketDialog(columns: BoardColumn[]) {
+  openCreateTicketDialog(columns: BoardColumn[], selectedColumnId: string) {
     const ref = this.dialog.open(TicketDialogComponent, {
       width: '480px',
-      data: { columns },
+      data: { columns, selectedColumnId },
     });
     ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: TicketDialogResult | undefined) => {
       if (result?.action === 'save' && result.columnId) {

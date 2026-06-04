@@ -1,0 +1,1 @@
+I'd like to have some kind of live update, so in case another user is working with this project and updates the board, update a ticket or creates a column. My application should react to these changes without the page reload. Let's discuss. A way to do it? Let's discuss technologies. To do it. What are the pros and cons of each way to approach this. 

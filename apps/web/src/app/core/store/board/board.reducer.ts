@@ -44,9 +44,9 @@ export const boardReducer = createReducer(
     ...state,
     error: null,
   })),
-  on(BoardActions.addColumnSuccess, (state, { column }) => ({
+  on(BoardActions.addColumnSuccess, (state, { columns }) => ({
     ...state,
-    columns: [...state.columns, column],
+    columns,
   })),
   on(BoardActions.addColumnFailure, (state, { error }) => ({
     ...state,

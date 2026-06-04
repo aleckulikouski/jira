@@ -8,14 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { filter } from 'rxjs';
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog/confirm-dialog.component';
-import type { BoardColumn } from '@org/shared-types';
-
-export type ColumnEditorDialogData = BoardColumn | undefined;
-
-export interface ColumnEditorDialogResult {
-  id?: string;
-  name: string;
-}
+import type { ColumnEditorDialogData, ColumnEditorDialogResult } from '../../../core/interfaces/column-editor-dialog.interface';
 
 @Component({
   selector: 'app-column-editor-dialog',
@@ -33,11 +26,11 @@ export class ColumnEditorDialogComponent {
   readonly data = inject<ColumnEditorDialogData>(MAT_DIALOG_DATA);
 
   get isEditMode(): boolean {
-    return !!this.data;
+    return !!this.data.column;
   }
 
   private get initialName(): string {
-    return this.data?.name?.trim() ?? '';
+    return this.data.column?.name?.trim() ?? '';
   }
 
   get isDirty(): boolean {
@@ -45,8 +38,8 @@ export class ColumnEditorDialogComponent {
   }
 
   constructor() {
-    if (this.data) {
-      this.name = this.data.name;
+    if (this.data.column) {
+      this.name = this.data.column.name;
     }
 
     this.dialogRef
@@ -73,8 +66,8 @@ export class ColumnEditorDialogComponent {
     }
 
     const result: ColumnEditorDialogResult = this.isEditMode
-      ? { id: this.data!.id, name: trimmed }
-      : { name: trimmed };
+      ? { id: this.data.column!.id, name: trimmed, afterColumnId: this.data.afterColumnId }
+      : { name: trimmed, afterColumnId: this.data.afterColumnId };
 
     this.dialogRef.close(result);
   }

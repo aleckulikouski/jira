@@ -39,7 +39,7 @@ describe('TicketDialogComponent', () => {
           { provide: MatDialog, useValue: { open: vi.fn().mockReturnValue({ afterClosed: () => of(false) }) } },
           {
             provide: MAT_DIALOG_DATA,
-            useValue: { columns: makeColumns() } satisfies TicketDialogData,
+            useValue: { columns: makeColumns(), selectedColumnId: 'c-2' } satisfies TicketDialogData,
           },
         ],
       }).compileComponents();
@@ -47,21 +47,46 @@ describe('TicketDialogComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should default to empty fields and first column', () => {
+    it('should default to empty fields and pre-selected column', () => {
       expect(fixture.componentInstance.title).toBe('');
       expect(fixture.componentInstance.description).toBe('');
-      expect(fixture.componentInstance.columnId).toBe('c-1');
+      expect(fixture.componentInstance.columnId).toBe('c-2');
       expect(fixture.componentInstance.isEdit).toBe(false);
     });
 
-    it('should show "Create Ticket" title', () => {
+    it('should fall back to first column when selectedColumnId is absent', async () => {
+      // Re-configure with no selectedColumnId
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [TicketDialogComponent],
+        providers: [
+          provideNoopAnimations(),
+          { provide: MatDialogRef, useValue: { close: vi.fn() } },
+          { provide: MatDialog, useValue: { open: vi.fn().mockReturnValue({ afterClosed: () => of(false) }) } },
+          {
+            provide: MAT_DIALOG_DATA,
+            useValue: { columns: makeColumns() } satisfies TicketDialogData,
+          },
+        ],
+      }).compileComponents();
+      const fallbackFixture = TestBed.createComponent(TicketDialogComponent);
+      fallbackFixture.detectChanges();
+      expect(fallbackFixture.componentInstance.columnId).toBe('c-1');
+    });
+
+    it('should show "New Ticket" title', () => {
       const title = fixture.nativeElement.querySelector('h2');
-      expect(title.textContent).toContain('Create');
+      expect(title.textContent).toContain('New');
     });
 
     it('should not show delete button', () => {
       const deleteBtn = fixture.nativeElement.querySelector('.delete-btn');
       expect(deleteBtn).toBeNull();
+    });
+
+    it('should have submit button labeled "Save"', () => {
+      const submitBtn = fixture.nativeElement.querySelector('button[color="primary"]');
+      expect(submitBtn.textContent?.trim()).toBe('Save');
     });
 
     it('should disable submit when title is empty', () => {
@@ -121,6 +146,11 @@ describe('TicketDialogComponent', () => {
       expect(fixture.componentInstance.isEdit).toBe(true);
     });
 
+    it('should ignore selectedColumnId in edit mode and use ticket.columnId', () => {
+      // Edit mode always uses ticket.columnId, regardless of selectedColumnId
+      expect(fixture.componentInstance.columnId).toBe('c-1');
+    });
+
     it('should show "Edit Ticket" title', () => {
       const title = fixture.nativeElement.querySelector('h2');
       expect(title.textContent).toContain('Edit');
@@ -129,6 +159,11 @@ describe('TicketDialogComponent', () => {
     it('should show delete button', () => {
       const deleteBtn = fixture.nativeElement.querySelector('.delete-btn');
       expect(deleteBtn).not.toBeNull();
+    });
+
+    it('should have submit button labeled "Save"', () => {
+      const submitBtn = fixture.nativeElement.querySelector('button[color="primary"]');
+      expect(submitBtn.textContent?.trim()).toBe('Save');
     });
 
     it('should close dialog with save action with changed fields', () => {

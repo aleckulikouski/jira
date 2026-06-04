@@ -26,11 +26,11 @@ export const addColumn$ = createEffect(
   (actions$ = inject(Actions), boardService = inject(BoardService)) =>
     actions$.pipe(
       ofType(BoardActions.addColumn),
-      switchMap(({ projectId, name }) =>
-        boardService.createColumn(projectId, name).pipe(
-          switchMap((column) =>
+      switchMap(({ projectId, name, afterColumnId }) =>
+        boardService.createColumn(projectId, name, afterColumnId).pipe(
+          switchMap((columns) =>
             of(
-              BoardActions.addColumnSuccess({ column }),
+              BoardActions.addColumnSuccess({ columns }),
               BoardActions.showSuccess({ message: 'Column created' }),
             ),
           ),

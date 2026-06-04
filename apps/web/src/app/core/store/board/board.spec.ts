@@ -171,6 +171,41 @@ describe('Board Reducer - Tickets', () => {
     });
   });
 
+  describe('addColumn', () => {
+    const columns = [
+      makeColumn({ id: 'c-1', name: 'To Do', order: 0 }),
+      makeColumn({ id: 'c-2', name: 'In Progress', order: 1 }),
+    ];
+
+    it('should clear error on addColumn', () => {
+      const state = boardReducer(
+        { ...initial, error: 'previous error' },
+        BoardActions.addColumn({ projectId: 'p-1', name: 'New' }),
+      );
+      expect(state.error).toBeNull();
+    });
+
+    it('should replace columns on addColumnSuccess', () => {
+      const allColumns = [
+        makeColumn({ id: 'c-1', name: 'To Do', order: 0 }),
+        makeColumn({ id: 'c-new', name: 'New', order: 1 }),
+        makeColumn({ id: 'c-2', name: 'In Progress', order: 2 }),
+      ];
+      const startState: BoardState = {
+        ...initial,
+        columns: [...columns],
+      };
+      const state = boardReducer(startState, BoardActions.addColumnSuccess({ columns: allColumns }));
+      expect(state.columns).toEqual(allColumns);
+      expect(state.columns).toHaveLength(3);
+    });
+
+    it('should set error on addColumnFailure', () => {
+      const state = boardReducer(initial, BoardActions.addColumnFailure({ error: 'Server error' }));
+      expect(state.error).toBe('Server error');
+    });
+  });
+
   describe('reorderColumns', () => {
     const columns = [
       makeColumn({ id: 'c-1', name: 'First', order: 0 }),

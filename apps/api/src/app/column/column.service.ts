@@ -17,17 +17,48 @@ export class ColumnService {
     });
   }
 
-  async create(projectId: string, userId: string, name: string) {
+  async create(projectId: string, userId: string, name: string, afterColumnId?: string) {
     await this.auth.project(projectId, userId);
 
-    const maxOrder = await this.prisma.boardColumn.aggregate({
-      where: { projectId },
-      _max: { order: true },
-    });
-    const nextOrder = (maxOrder._max.order ?? -1) + 1;
+    return this.prisma.$transaction(async (tx) => {
+      let target: { order: number } | null = null;
+      if (afterColumnId) {
+        target = await tx.boardColumn.findFirst({
+          where: { id: afterColumnId, projectId },
+          select: { order: true },
+        });
+      }
 
-    return this.prisma.boardColumn.create({
-      data: { projectId, name, order: nextOrder },
+      let nextOrder: number;
+
+      if (target) {
+        nextOrder = target.order + 1;
+        const trailingColumns = await tx.boardColumn.findMany({
+          where: { projectId, order: { gt: target.order } },
+          select: { id: true },
+        });
+        for (const col of trailingColumns) {
+          await tx.boardColumn.update({
+            where: { id: col.id },
+            data: { order: { increment: 1 } },
+          });
+        }
+      } else {
+        const maxOrder = await tx.boardColumn.aggregate({
+          where: { projectId },
+          _max: { order: true },
+        });
+        nextOrder = (maxOrder._max.order ?? -1) + 1;
+      }
+
+      await tx.boardColumn.create({
+        data: { projectId, name, order: nextOrder },
+      });
+
+      return tx.boardColumn.findMany({
+        where: { projectId },
+        orderBy: { order: 'asc' },
+      });
     });
   }
 

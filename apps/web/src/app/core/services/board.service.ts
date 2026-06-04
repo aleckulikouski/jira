@@ -13,10 +13,10 @@ export class BoardService {
     );
   }
 
-  createColumn(projectId: string, name: string) {
-    return this.http.post<BoardColumn>(
+  createColumn(projectId: string, name: string, afterColumnId?: string) {
+    return this.http.post<BoardColumn[]>(
       `${this.base}/projects/${projectId}/columns`,
-      { name },
+      { name, afterColumnId },
     );
   }
 
