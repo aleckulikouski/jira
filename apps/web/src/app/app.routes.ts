@@ -6,6 +6,7 @@ import { MainLayoutComponent } from './core/layouts/main-layout/main-layout.comp
 import { UserSettingsComponent } from './features/user-settings/user-settings.component';
 import { authGuard } from './core/guards/auth.guard';
 import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
+import { projectRedirectResolver } from './core/resolvers/project-redirect.resolver';
 
 export const appRoutes: Route[] = [
   { path: 'login', component: LoginComponent },
@@ -15,9 +16,10 @@ export const appRoutes: Route[] = [
     component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'board', component: BoardComponent },
+      { path: '', component: BoardComponent, canActivate: [projectRedirectResolver] },
+      { path: 'projects/:id/board', component: BoardComponent },
       { path: 'user-settings', component: UserSettingsComponent, canDeactivate: [unsavedChangesGuard] },
-      { path: '', redirectTo: 'board', pathMatch: 'full' },
+      { path: 'board', redirectTo: '', pathMatch: 'full' },
     ],
   },
 ];

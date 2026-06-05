@@ -4,13 +4,13 @@ import { ProjectActions } from './project.actions';
 import { UserActions } from '../user/user.actions';
 
 export interface ProjectState {
-  project: Project | null;
+  projects: Project[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: ProjectState = {
-  project: null,
+  projects: [],
   loading: false,
   error: null,
 };
@@ -20,19 +20,32 @@ export const projectReducer = createReducer(
 
   on(UserActions.logout, () => initialState),
 
-  on(ProjectActions.loadProject, (state) => ({
+  on(ProjectActions.loadProjects, (state) => ({
     ...state,
     loading: true,
     error: null,
   })),
-  on(ProjectActions.loadProjectSuccess, (state, { project }) => ({
+  on(ProjectActions.loadProjectsSuccess, (state, { projects }) => ({
     ...state,
-    project,
+    projects,
     loading: false,
   })),
-  on(ProjectActions.loadProjectFailure, (state, { error }) => ({
+  on(ProjectActions.loadProjectsFailure, (state, { error }) => ({
     ...state,
     loading: false,
+    error,
+  })),
+
+  on(ProjectActions.createProject, (state) => ({
+    ...state,
+    error: null,
+  })),
+  on(ProjectActions.createProjectSuccess, (state, { project }) => ({
+    ...state,
+    projects: [...state.projects, project],
+  })),
+  on(ProjectActions.createProjectFailure, (state, { error }) => ({
+    ...state,
     error,
   })),
 );

@@ -5,6 +5,15 @@ import { catchError, concatMap, map, mergeMap, of, switchMap, tap } from 'rxjs';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
 
+export const loadTicketsAfterColumns$ = createEffect(
+  (actions$ = inject(Actions)) =>
+    actions$.pipe(
+      ofType(BoardActions.loadColumnsSuccess),
+      mergeMap(({ columns }) => columns.map((c) => BoardActions.loadTickets({ columnId: c.id }))),
+    ),
+  { functional: true },
+);
+
 export const loadColumns$ = createEffect(
   (actions$ = inject(Actions), boardService = inject(BoardService)) =>
     actions$.pipe(

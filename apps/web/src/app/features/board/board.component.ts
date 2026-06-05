@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -10,9 +11,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
-import { filter, map, Observable, take } from 'rxjs';
+import { map, Observable, take, shareReplay } from 'rxjs';
 import { BoardFacade } from '../../core/store/board/board.facade';
-import { ProjectFacade } from '../../core/store/project/project.facade';
+import { ProjectSelectorComponent } from '../../core/components/project-selector/project-selector.component';
 import { ColumnEditorDialogComponent } from './column-editor-dialog/column-editor-dialog.component';
 import type { ColumnEditorDialogResult } from '../../core/interfaces/column-editor-dialog.interface';
 import type { TicketDialogResult } from '../../core/interfaces/ticket-dialog.interface';
@@ -35,47 +36,35 @@ import { BoardColumn, Ticket } from '@org/shared-types';
     CdkDragHandle,
     CdkDragPlaceholder,
     CdkScrollable,
+    ProjectSelectorComponent,
   ],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BoardComponent implements OnInit {
+export class BoardComponent {
   readonly board = inject(BoardFacade);
-  readonly project = inject(ProjectFacade);
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
   columnDropListIds: string[] = [];
-  private projectId = '';
 
   private readonly ticketSelectors = new Map<string, Observable<Ticket[]>>();
-  private loaded = false;
+
+  readonly hasSelectedProject$ = this.route.paramMap.pipe(
+    map((p) => p.has('id')),
+    shareReplay(1),
+  );
+
+  private get projectId(): string {
+    return this.route.snapshot.paramMap.get('id') ?? '';
+  }
 
   constructor() {
-    this.project.project$.pipe(
-      filter((p) => p !== null),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe((p) => {
-      this.projectId = p.id;
-      this.board.loadColumns(p.id);
-    });
-
-    this.board.columns$.pipe(
-      filter((cols) => !this.loaded && cols.length > 0),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe((cols) => {
-      this.loaded = true;
-      cols.forEach((c) => this.board.loadTickets(c.id));
-    });
-
     this.board.columns$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((cols) => {
       this.columnDropListIds = cols.map((c) => c.id);
     });
-  }
-
-  ngOnInit() {
-    this.project.loadProject();
   }
 
   ticketsFor(columnId: string): Observable<Ticket[]> {

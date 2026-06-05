@@ -1,0 +1,1 @@
+Instead of my project title, let's have. A project selector drop down. No restrictions for now. Any user can select and work with any project. Let's add Create project button. Inside the header menu inside the user menu. 

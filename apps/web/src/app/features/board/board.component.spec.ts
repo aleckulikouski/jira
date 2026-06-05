@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
 import { BoardComponent } from './board.component';
 import { BoardFacade } from '../../core/store/board/board.facade';
@@ -55,6 +57,13 @@ describe('BoardComponent', () => {
       providers: [
         provideNoopAnimations(),
         {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: vi.fn().mockReturnValue('p-1') } },
+            paramMap: of(new Map([['id', 'p-1']])),
+          },
+        },
+        {
           provide: BoardFacade,
           useValue: {
             columns$: of(columns),
@@ -75,15 +84,17 @@ describe('BoardComponent', () => {
         {
           provide: ProjectFacade,
           useValue: {
-            project$: of({
-              id: 'p-1',
-              ownerId: 'u-1',
-              name: 'Test Project',
-              createdAt: '',
-              updatedAt: '',
-            }),
-            loadProject: vi.fn(),
+            projects$: of([]),
+            loading$: of(false),
+            error$: of(null),
+            loadProjects: vi.fn(),
+            selectProject: vi.fn(),
+            createProject: vi.fn(),
           },
+        },
+        {
+          provide: MatSnackBar,
+          useValue: { open: vi.fn() },
         },
       ],
     })

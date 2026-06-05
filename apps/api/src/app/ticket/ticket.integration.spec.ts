@@ -354,7 +354,7 @@ describe('Ticket API', () => {
   // ── Ownership ───────────────────────────────────────────────────
 
   describe('authorization', () => {
-    it('returns 403 when column belongs to another user', async () => {
+    it('allows access to tickets from any project', async () => {
       const otherUser = await prisma.user.create({
         data: {
           email: 'other-ticket-test@test.com',
@@ -371,10 +371,10 @@ describe('Ticket API', () => {
         data: { projectId: otherProject.id, name: 'Other Col', order: 0 },
       });
 
-      // Our test user tries to get tickets from other user's column
+      // Our test user tries to get tickets from other user's column — now allowed
       await request(app.getHttpServer())
         .get(`/api/columns/${otherCol.id}/tickets`)
-        .expect(403);
+        .expect(200);
 
       // Cleanup
       await prisma.user.delete({ where: { id: otherUser.id } }).catch(() => {});

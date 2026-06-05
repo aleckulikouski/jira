@@ -1,0 +1,32 @@
+<div class="project-selector">
+  @if (!loaded && (loading$ | async)) {
+    <!-- Loading state: show route ID with spinner -->
+    <div class="selector-loading">
+      @if (routeId$ | async; as id) {
+        <span class="loading-id">{{ id }}</span>
+      }
+      <mat-spinner diameter="20" />
+    </div>
+  } @else if (noProjects$ | async) {
+    <!-- No projects exist: disabled placeholder -->
+    <mat-form-field appearance="outline" class="selector-field">
+      <mat-select [disabled]="true" placeholder="No projects">
+      </mat-select>
+    </mat-form-field>
+  } @else {
+    <!-- Normal state: project selection available -->
+    <mat-form-field appearance="outline" class="selector-field">
+      <mat-select
+        [value]="routeId$ | async"
+        placeholder="Select a project..."
+        (selectionChange)="onProjectSelect($event.value)"
+      >
+        @for (project of (projects$ | async); track project.id) {
+          <mat-option [value]="project.id">
+            {{ project.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+</div>

@@ -222,7 +222,7 @@ export class UserSettingsComponent implements OnInit, OnDestroy, CanComponentDea
   }
 
   onBack(): void {
-    this.router.navigate(['/board']);
+    this.router.navigate(['/']);
   }
 
   canDeactivate(): boolean | Observable<boolean> {

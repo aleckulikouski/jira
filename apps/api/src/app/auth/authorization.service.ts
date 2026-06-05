@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import type { Project, BoardColumn, Ticket } from '../../generated/prisma/client';
 
@@ -22,7 +22,6 @@ export class AuthorizationService {
   async project(id: string, userId: string): Promise<AuthorizedProject> {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found');
-    if (project.ownerId !== userId) throw new ForbiddenException();
     return project;
   }
 
@@ -32,7 +31,6 @@ export class AuthorizationService {
       include: COLUMN_INCLUDE,
     });
     if (!column) throw new NotFoundException('Column not found');
-    if (column.project.ownerId !== userId) throw new ForbiddenException();
     return column;
   }
 
@@ -42,7 +40,6 @@ export class AuthorizationService {
       include: TICKET_INCLUDE,
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    if (ticket.column.project.ownerId !== userId) throw new ForbiddenException();
     return ticket;
   }
 }

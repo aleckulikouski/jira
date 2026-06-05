@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthorizationService } from './authorization.service';
 import { PrismaService } from '../prisma.service';
@@ -48,11 +48,12 @@ describe('AuthorizationService', () => {
       await expect(service.project('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
     });
 
-    it('throws ForbiddenException when owner does not match', async () => {
+    it('returns the project regardless of owner', async () => {
       const project = { id: 'p-1', ownerId: 'other-user', name: 'Test' };
       (prisma.project.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(project);
 
-      await expect(service.project('p-1', 'user-1')).rejects.toThrow(ForbiddenException);
+      const result = await service.project('p-1', 'user-1');
+      expect(result).toBe(project);
     });
   });
 
@@ -78,7 +79,7 @@ describe('AuthorizationService', () => {
       await expect(service.column('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
     });
 
-    it('throws ForbiddenException when project owner does not match', async () => {
+    it('returns column regardless of project owner', async () => {
       const column = {
         id: 'c-1',
         projectId: 'p-1',
@@ -86,7 +87,8 @@ describe('AuthorizationService', () => {
       };
       (prisma.boardColumn.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(column);
 
-      await expect(service.column('c-1', 'user-1')).rejects.toThrow(ForbiddenException);
+      const result = await service.column('c-1', 'user-1');
+      expect(result).toBe(column);
     });
   });
 
@@ -119,11 +121,12 @@ describe('AuthorizationService', () => {
       await expect(service.ticket('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
     });
 
-    it('throws ForbiddenException when project owner does not match', async () => {
+    it('returns ticket regardless of project owner', async () => {
       const ticket = makeTicket('other-user');
       (prisma.ticket.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(ticket);
 
-      await expect(service.ticket('t-1', 'user-1')).rejects.toThrow(ForbiddenException);
+      const result = await service.ticket('t-1', 'user-1');
+      expect(result).toBe(ticket);
     });
   });
 });

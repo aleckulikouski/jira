@@ -19,6 +19,11 @@
     </button>
 
     <mat-menu #userMenu="matMenu">
+      <button mat-menu-item (click)="onCreateProject(trigger)">
+        <mat-icon>add</mat-icon>
+        <span>Create project</span>
+      </button>
+      <mat-divider></mat-divider>
       <button mat-menu-item (click)="onSettingsClick(trigger)">
         <mat-icon>settings</mat-icon>
         <span>Settings</span>

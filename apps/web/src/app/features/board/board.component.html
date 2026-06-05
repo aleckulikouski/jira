@@ -1,6 +1,6 @@
 <div class="board-container">
   <div class="project-header">
-    <h2>{{ (project.project$ | async)?.name }}</h2>
+    <app-project-selector />
   </div>
 
   @if (board.loading$ | async) {
@@ -11,7 +11,14 @@
     <div class="error">{{ error }}</div>
   }
 
-  @if (board.columns$ | async; as columns) {
+  @let hasProject = (hasSelectedProject$ | async) ?? false;
+
+  @if (!hasProject) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">dashboard</mat-icon>
+      <p>Select a project to get started</p>
+    </div>
+  } @else if (board.columns$ | async; as columns) {
     @if (columns.length === 0) {
       <div class="empty-state">
         <p>No columns yet. Create your first column to get started.</p>

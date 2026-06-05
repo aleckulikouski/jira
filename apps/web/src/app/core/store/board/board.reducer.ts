@@ -23,6 +23,7 @@ export const boardReducer = createReducer(
   initialState,
 
   on(UserActions.logout, () => initialState),
+  on(BoardActions.clearBoard, () => initialState),
 
   on(BoardActions.loadColumns, (state) => ({
     ...state,

@@ -45,6 +45,8 @@ export const BoardActions = createActionGroup({
     'Reorder Columns Success': emptyProps(),
     'Reorder Columns Failure': props<{ previousOrderedIds: string[]; error: string }>(),
 
+    'Clear Board': emptyProps(),
+
     'Show Success': props<{ message: string }>(),
     'Show Error': props<{ message: string }>(),
   },

@@ -1,0 +1,16 @@
+.project-selector {
+  display: flex;
+  align-items: center;
+}
+
+.selector-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.selector-field {
+  min-width: 220px;
+}

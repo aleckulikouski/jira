@@ -18,6 +18,10 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface CreateProjectData {
+  name: string;
+}
+
 export interface BoardColumn {
   id: string;
   projectId: string;
