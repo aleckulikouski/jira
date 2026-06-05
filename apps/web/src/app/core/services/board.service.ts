@@ -7,14 +7,16 @@ export class BoardService {
   private readonly http = inject(HttpClient);
   private readonly base = 'http://localhost:3000/api';
 
-  getColumns(projectId: string) {
-    return this.http.get<BoardColumn[]>(
-      `${this.base}/projects/${projectId}/columns`,
-    );
+  getBoard(projectId: string) {
+    return this.http.get<{
+      id: string;
+      name: string;
+      columns: import('@org/shared-types').BoardColumn[];
+    }>(`${this.base}/projects/${projectId}/board`);
   }
 
   createColumn(projectId: string, name: string, afterColumnId?: string) {
-    return this.http.post<BoardColumn[]>(
+    return this.http.post<BoardColumn>(
       `${this.base}/projects/${projectId}/columns`,
       { name, afterColumnId },
     );
@@ -29,12 +31,6 @@ export class BoardService {
 
   deleteColumn(id: string) {
     return this.http.delete(`${this.base}/columns/${id}`);
-  }
-
-  getTickets(columnId: string) {
-    return this.http.get<Ticket[]>(
-      `${this.base}/columns/${columnId}/tickets`,
-    );
   }
 
   createTicket(columnId: string, data: { title: string; description?: string }) {

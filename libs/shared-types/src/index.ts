@@ -27,6 +27,7 @@ export interface BoardColumn {
   projectId: string;
   name: string;
   order: number;
+  tickets?: Ticket[];
   createdAt: string;
   updatedAt: string;
 }

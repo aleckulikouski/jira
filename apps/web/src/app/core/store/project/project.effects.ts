@@ -53,7 +53,7 @@ export const selectProject$ = createEffect(
       ofType(ProjectActions.selectProject),
       tap(({ id }) => localStorage.setItem(LAST_PROJECT_KEY, id)),
       switchMap(({ id }) =>
-        of(BoardActions.clearBoard(), BoardActions.loadColumns({ projectId: id })),
+        of(BoardActions.clearBoard(), BoardActions.loadBoard({ projectId: id })),
       ),
     ),
   { functional: true },

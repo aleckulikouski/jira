@@ -9,14 +9,6 @@ export class ColumnService {
     private readonly auth: AuthorizationService,
   ) {}
 
-  async getForProject(projectId: string, userId: string) {
-    await this.auth.project(projectId, userId);
-    return this.prisma.boardColumn.findMany({
-      where: { projectId },
-      orderBy: { order: 'asc' },
-    });
-  }
-
   async create(projectId: string, userId: string, name: string, afterColumnId?: string) {
     await this.auth.project(projectId, userId);
 
@@ -51,13 +43,8 @@ export class ColumnService {
         nextOrder = (maxOrder._max.order ?? -1) + 1;
       }
 
-      await tx.boardColumn.create({
+      return tx.boardColumn.create({
         data: { projectId, name, order: nextOrder },
-      });
-
-      return tx.boardColumn.findMany({
-        where: { projectId },
-        orderBy: { order: 'asc' },
       });
     });
   }

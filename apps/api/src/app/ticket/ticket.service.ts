@@ -9,15 +9,6 @@ export class TicketService {
     private readonly auth: AuthorizationService,
   ) {}
 
-  async getForColumn(columnId: string, userId: string) {
-    await this.auth.column(columnId, userId);
-
-    return this.prisma.ticket.findMany({
-      where: { columnId },
-      orderBy: { position: 'asc' },
-    });
-  }
-
   async create(columnId: string, userId: string, data: { title: string; description?: string }) {
     await this.auth.column(columnId, userId);
 

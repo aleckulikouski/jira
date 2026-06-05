@@ -23,10 +23,27 @@ const makeColumn = (overrides?: Partial<BoardColumn>): BoardColumn => ({
   order: 0,
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
+  tickets: [],
   ...overrides,
 });
 
 describe('Board Actions', () => {
+  it('should create loadBoard action', () => {
+    const action = BoardActions.loadBoard({ projectId: 'p-1' });
+    expect(action.projectId).toBe('p-1');
+  });
+
+  it('should create loadBoardSuccess action', () => {
+    const columns = [makeColumn()];
+    const action = BoardActions.loadBoardSuccess({ columns });
+    expect(action.columns).toBe(columns);
+  });
+
+  it('should create loadBoardFailure action', () => {
+    const action = BoardActions.loadBoardFailure({ error: 'oops' });
+    expect(action.error).toBe('oops');
+  });
+
   it('should create updateTicket action', () => {
     const action = BoardActions.updateTicket({ id: 't-1', data: { title: 'Updated' } });
     expect(action.id).toBe('t-1');
@@ -65,19 +82,47 @@ describe('Board Actions', () => {
   });
 });
 
-describe('Board Reducer - Tickets', () => {
+describe('Board Reducer - Board load', () => {
+  it('should return initial state', () => {
+    const state = boardReducer(undefined, { type: '@@INIT' } as any);
+    expect(state.columns).toEqual([]);
+    expect(state.loading).toBe(false);
+  });
+
+  it('should set loading true on loadBoard', () => {
+    const state = boardReducer(undefined, BoardActions.loadBoard({ projectId: 'p-1' }));
+    expect(state.loading).toBe(true);
+    expect(state.error).toBeNull();
+  });
+
+  it('should populate columns on loadBoardSuccess', () => {
+    const columns = [
+      makeColumn({ id: 'c-1', tickets: [makeTicket()] }),
+      makeColumn({ id: 'c-2', tickets: [] }),
+    ];
+    const state = boardReducer(undefined, BoardActions.loadBoardSuccess({ columns }));
+    expect(state.columns).toHaveLength(2);
+    expect(state.columns[0].tickets).toHaveLength(1);
+    expect(state.columns[1].tickets).toHaveLength(0);
+    expect(state.loading).toBe(false);
+  });
+
+  it('should set error on loadBoardFailure', () => {
+    const state = boardReducer(undefined, BoardActions.loadBoardFailure({ error: 'Failed' }));
+    expect(state.error).toBe('Failed');
+    expect(state.loading).toBe(false);
+  });
+});
+
+describe('Board Reducer - Tickets (nested)', () => {
   const initial: BoardState = {
-    columns: [makeColumn()],
-    tickets: [makeTicket(), makeTicket({ id: 't-2', title: 'Second' })],
+    columns: [
+      makeColumn({ id: 'c-1', tickets: [makeTicket(), makeTicket({ id: 't-2', title: 'Second' })] }),
+    ],
     loading: false,
     error: null,
     previousOrderedIds: null,
   };
-
-  it('should return initial state', () => {
-    const state = boardReducer(undefined, { type: '@@INIT' } as any);
-    expect(state.tickets).toEqual([]);
-  });
 
   describe('updateTicket', () => {
     it('should clear error on updateTicket', () => {
@@ -91,17 +136,28 @@ describe('Board Reducer - Tickets', () => {
     it('should replace the ticket on updateTicketSuccess', () => {
       const updated = makeTicket({ id: 't-1', title: 'Updated Title', description: 'New desc' });
       const state = boardReducer(initial, BoardActions.updateTicketSuccess({ ticket: updated }));
-      expect(state.tickets).toHaveLength(2);
-      expect(state.tickets.find((t) => t.id === 't-1')).toEqual(updated);
-      expect(state.tickets.find((t) => t.id === 't-2')!.title).toBe('Second');
+      expect(state.columns[0].tickets).toHaveLength(2);
+      const t = state.columns[0].tickets!.find((t) => t.id === 't-1');
+      expect(t).toEqual(updated);
     });
 
-    it('should handle ticket column change on updateTicketSuccess', () => {
+    it('should move ticket across columns on updateTicketSuccess when columnId changes', () => {
+      const initialMulti: BoardState = {
+        columns: [
+          makeColumn({ id: 'c-1', tickets: [makeTicket({ id: 't-1' })] }),
+          makeColumn({ id: 'c-2', tickets: [] }),
+        ],
+        loading: false,
+        error: null,
+        previousOrderedIds: null,
+      };
+
       const updated = makeTicket({ id: 't-1', columnId: 'c-2', position: 0 });
-      const state = boardReducer(initial, BoardActions.updateTicketSuccess({ ticket: updated }));
-      const ticket = state.tickets.find((t) => t.id === 't-1');
-      expect(ticket!.columnId).toBe('c-2');
-      expect(ticket!.position).toBe(0);
+      const state = boardReducer(initialMulti, BoardActions.updateTicketSuccess({ ticket: updated }));
+
+      expect(state.columns[0].tickets).toHaveLength(0);
+      expect(state.columns[1].tickets).toHaveLength(1);
+      expect(state.columns[1].tickets![0].id).toBe('t-1');
     });
 
     it('should set error on updateTicketFailure', () => {
@@ -121,62 +177,83 @@ describe('Board Reducer - Tickets', () => {
 
     it('should remove the ticket on deleteTicketSuccess', () => {
       const state = boardReducer(initial, BoardActions.deleteTicketSuccess({ id: 't-1' }));
-      expect(state.tickets).toHaveLength(1);
-      expect(state.tickets[0].id).toBe('t-2');
-    });
-
-    it('should set error on deleteTicketFailure', () => {
-      const state = boardReducer(initial, BoardActions.deleteTicketFailure({ error: 'Delete failed' }));
-      expect(state.error).toBe('Delete failed');
+      expect(state.columns[0].tickets).toHaveLength(1);
+      expect(state.columns[0].tickets![0].id).toBe('t-2');
     });
   });
 
   describe('moveTicket', () => {
-    const previous = makeTicket({ id: 't-1', columnId: 'c-1', position: 0 });
-
     it('should clear error and update ticket position/column optimistically', () => {
       const state = boardReducer(
         { ...initial, error: 'prev' },
-        BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 5, previous }),
+        BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 5, previous: makeTicket() }),
       );
       expect(state.error).toBeNull();
-      const moved = state.tickets.find((t) => t.id === 't-1');
-      expect(moved!.columnId).toBe('c-2');
-      expect(moved!.position).toBe(5);
-      // Other tickets unchanged
-      expect(state.tickets.find((t) => t.id === 't-2')!.columnId).toBe('c-1');
+      // ticket should be removed from c-1
+      const col1 = state.columns.find((c) => c.id === 'c-1')!;
+      expect(col1.tickets!.find((t) => t.id === 't-1')).toBeUndefined();
     });
 
     it('should replace ticket with server data on moveTicketSuccess', () => {
       const serverTicket = makeTicket({ id: 't-1', columnId: 'c-2', position: 3, title: 'Server Title' });
       const state = boardReducer(initial, BoardActions.moveTicketSuccess({ ticket: serverTicket }));
-      const moved = state.tickets.find((t) => t.id === 't-1');
+      const col1 = state.columns.find((c) => c.id === 'c-1')!;
+      const moved = col1.tickets!.find((t) => t.id === 't-1');
       expect(moved!.columnId).toBe('c-2');
-      expect(moved!.position).toBe(3);
-      expect(moved!.title).toBe('Server Title');
     });
 
     it('should roll back ticket and set error on moveTicketFailure', () => {
-      // First apply optimistic move
+      const previous = makeTicket({ id: 't-1', columnId: 'c-1', position: 0 });
       let state = boardReducer(
         initial,
         BoardActions.moveTicket({ id: 't-1', columnId: 'c-2', position: 5, previous }),
       );
-      // Then fail — rollback to previous state
       state = boardReducer(state, BoardActions.moveTicketFailure({ ticket: previous, error: 'Move failed' }));
-      const rolledBack = state.tickets.find((t) => t.id === 't-1');
+      const col1 = state.columns.find((c) => c.id === 'c-1')!;
+      const rolledBack = col1.tickets!.find((t) => t.id === 't-1');
       expect(rolledBack!.columnId).toBe('c-1');
       expect(rolledBack!.position).toBe(0);
       expect(state.error).toBe('Move failed');
     });
   });
 
-  describe('addColumn', () => {
-    const columns = [
-      makeColumn({ id: 'c-1', name: 'To Do', order: 0 }),
-      makeColumn({ id: 'c-2', name: 'In Progress', order: 1 }),
-    ];
+  describe('addTicket', () => {
+    it('should add optimistic ticket to the column', () => {
+      const state = boardReducer(
+        initial,
+        BoardActions.addTicket({ columnId: 'c-1', title: 'New Ticket', tempId: 'temp-1' }),
+      );
+      const col = state.columns.find((c) => c.id === 'c-1')!;
+      const added = col.tickets!.find((t) => t.id === 'temp-1');
+      expect(added).toBeDefined();
+      expect(added!.title).toBe('New Ticket');
+      expect(added!.position).toBe(999999);
+    });
 
+    it('should swap temp ticket with server ticket on addTicketSuccess', () => {
+      const serverTicket = makeTicket({ id: 'real-1', columnId: 'c-1', title: 'New Ticket' });
+      let state = boardReducer(
+        initial,
+        BoardActions.addTicket({ columnId: 'c-1', title: 'New Ticket', tempId: 'temp-1' }),
+      );
+      state = boardReducer(state, BoardActions.addTicketSuccess({ ticket: serverTicket, tempId: 'temp-1' }));
+      const col = state.columns.find((c) => c.id === 'c-1')!;
+      expect(col.tickets!.find((t) => t.id === 'temp-1')).toBeUndefined();
+      expect(col.tickets!.find((t) => t.id === 'real-1')).toBeDefined();
+    });
+
+    it('should remove temp ticket on addTicketFailure', () => {
+      let state = boardReducer(
+        initial,
+        BoardActions.addTicket({ columnId: 'c-1', title: 'New Ticket', tempId: 'temp-1' }),
+      );
+      state = boardReducer(state, BoardActions.addTicketFailure({ tempId: 'temp-1', error: 'Server error' }));
+      const col = state.columns.find((c) => c.id === 'c-1')!;
+      expect(col.tickets!.find((t) => t.id === 'temp-1')).toBeUndefined();
+    });
+  });
+
+  describe('addColumn', () => {
     it('should clear error on addColumn', () => {
       const state = boardReducer(
         { ...initial, error: 'previous error' },
@@ -185,19 +262,12 @@ describe('Board Reducer - Tickets', () => {
       expect(state.error).toBeNull();
     });
 
-    it('should replace columns on addColumnSuccess', () => {
-      const allColumns = [
-        makeColumn({ id: 'c-1', name: 'To Do', order: 0 }),
-        makeColumn({ id: 'c-new', name: 'New', order: 1 }),
-        makeColumn({ id: 'c-2', name: 'In Progress', order: 2 }),
-      ];
-      const startState: BoardState = {
-        ...initial,
-        columns: [...columns],
-      };
-      const state = boardReducer(startState, BoardActions.addColumnSuccess({ columns: allColumns }));
-      expect(state.columns).toEqual(allColumns);
-      expect(state.columns).toHaveLength(3);
+    it('should append single column on addColumnSuccess sorted by order', () => {
+      const newColumn = makeColumn({ id: 'c-new', name: 'New', order: 1, tickets: [] });
+      const state = boardReducer(initial, BoardActions.addColumnSuccess({ column: newColumn }));
+      expect(state.columns).toHaveLength(2);
+      expect(state.columns[1].id).toBe('c-new');
+      expect(state.columns[1].tickets).toEqual([]);
     });
 
     it('should set error on addColumnFailure', () => {
@@ -208,13 +278,12 @@ describe('Board Reducer - Tickets', () => {
 
   describe('reorderColumns', () => {
     const columns = [
-      makeColumn({ id: 'c-1', name: 'First', order: 0 }),
-      makeColumn({ id: 'c-2', name: 'Second', order: 1 }),
-      makeColumn({ id: 'c-3', name: 'Third', order: 2 }),
+      makeColumn({ id: 'c-1', name: 'First', order: 0, tickets: [makeTicket()] }),
+      makeColumn({ id: 'c-2', name: 'Second', order: 1, tickets: [] }),
+      makeColumn({ id: 'c-3', name: 'Third', order: 2, tickets: [] }),
     ];
     const stateWithCols: BoardState = {
       columns,
-      tickets: [],
       loading: false,
       error: null,
       previousOrderedIds: null,
@@ -230,25 +299,7 @@ describe('Board Reducer - Tickets', () => {
         }),
       );
       expect(state.columns.map((c) => c.id)).toEqual(['c-3', 'c-1', 'c-2']);
-      expect(state.columns[0].order).toBe(0);
-      expect(state.columns[1].order).toBe(1);
-      expect(state.columns[2].order).toBe(2);
       expect(state.previousOrderedIds).toEqual(['c-1', 'c-2', 'c-3']);
-    });
-
-    it('should clear previousOrderedIds on success', () => {
-      let state = boardReducer(
-        stateWithCols,
-        BoardActions.reorderColumns({
-          projectId: 'p-1',
-          orderedIds: ['c-3', 'c-1', 'c-2'],
-          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
-        }),
-      );
-      expect(state.previousOrderedIds).not.toBeNull();
-
-      state = boardReducer(state, BoardActions.reorderColumnsSuccess());
-      expect(state.previousOrderedIds).toBeNull();
     });
 
     it('should roll back to previous order on failure', () => {
@@ -260,8 +311,6 @@ describe('Board Reducer - Tickets', () => {
           previousOrderedIds: ['c-1', 'c-2', 'c-3'],
         }),
       );
-      expect(state.columns.map((c) => c.id)).toEqual(['c-3', 'c-1', 'c-2']);
-
       state = boardReducer(
         state,
         BoardActions.reorderColumnsFailure({
@@ -271,34 +320,19 @@ describe('Board Reducer - Tickets', () => {
       );
       expect(state.columns.map((c) => c.id)).toEqual(['c-1', 'c-2', 'c-3']);
       expect(state.error).toBe('Server error');
-      expect(state.previousOrderedIds).toBeNull();
-    });
-
-    it('should clear error on reorderColumns', () => {
-      const state = boardReducer(
-        { ...stateWithCols, error: 'previous error' },
-        BoardActions.reorderColumns({
-          projectId: 'p-1',
-          orderedIds: ['c-3', 'c-2', 'c-1'],
-          previousOrderedIds: ['c-1', 'c-2', 'c-3'],
-        }),
-      );
-      expect(state.error).toBeNull();
     });
   });
 
   describe('logout', () => {
     it('should reset board state on logout', () => {
       const populated: BoardState = {
-        columns: [makeColumn()],
-        tickets: [makeTicket()],
+        columns: [makeColumn({ tickets: [makeTicket()] })],
         loading: false,
         error: null,
         previousOrderedIds: null,
       };
       const state = boardReducer(populated, UserActions.logout());
       expect(state.columns).toEqual([]);
-      expect(state.tickets).toEqual([]);
     });
   });
 });

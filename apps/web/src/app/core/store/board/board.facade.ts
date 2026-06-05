@@ -13,8 +13,8 @@ export class BoardFacade {
   loading$ = this.store.select(selectBoardLoading);
   error$ = this.store.select(selectBoardError);
 
-  loadColumns(projectId: string) {
-    this.store.dispatch(BoardActions.loadColumns({ projectId }));
+  loadBoard(projectId: string) {
+    this.store.dispatch(BoardActions.loadBoard({ projectId }));
   }
 
   addColumn(data: AddColumnData) {
@@ -27,10 +27,6 @@ export class BoardFacade {
 
   deleteColumn(id: string) {
     this.store.dispatch(BoardActions.deleteColumn({ id }));
-  }
-
-  loadTickets(columnId: string) {
-    this.store.dispatch(BoardActions.loadTickets({ columnId }));
   }
 
   addTicket(columnId: string, title: string, description: string | undefined, tempId: string) {

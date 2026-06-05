@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, CanActivate, ExecutionContext, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { TicketModule } from './ticket.module';
+import { ProjectModule } from '../project/project.module';
 import { PrismaModule } from '../prisma.module';
 import { PrismaService } from '../prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -83,7 +84,7 @@ describe('Ticket API', () => {
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [TicketModule, PrismaModule],
+      imports: [TicketModule, ProjectModule, PrismaModule],
       providers: [{ provide: PrismaService, useValue: prisma }],
     })
       .overrideGuard(JwtAuthGuard)
@@ -113,15 +114,16 @@ describe('Ticket API', () => {
     await prisma.ticket.deleteMany({ where: { columnId: otherColumnId } });
   });
 
-  // ── GET /api/columns/:columnId/tickets ──────────────────────────
+  // ── GET /api/projects/:id/board ──────────────────────────────────
 
-  describe('GET /api/columns/:columnId/tickets', () => {
-    it('returns empty array for column with no tickets', async () => {
+  describe('GET /api/projects/:id/board', () => {
+    it('returns empty tickets array for column with no tickets', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/columns/${testColumnId}/tickets`)
+        .get(`/api/projects/${testProjectId}/board`)
         .expect(200);
 
-      expect(res.body).toEqual([]);
+      const column = res.body.columns.find((c: any) => c.id === testColumnId);
+      expect(column.tickets).toEqual([]);
     });
 
     it('returns tickets ordered by position ASC', async () => {
@@ -135,13 +137,14 @@ describe('Ticket API', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .get(`/api/columns/${testColumnId}/tickets`)
+        .get(`/api/projects/${testProjectId}/board`)
         .expect(200);
 
-      expect(res.body).toHaveLength(3);
-      expect(res.body[0].title).toBe('First');
-      expect(res.body[1].title).toBe('Second');
-      expect(res.body[2].title).toBe('Third');
+      const column = res.body.columns.find((c: any) => c.id === testColumnId);
+      expect(column.tickets).toHaveLength(3);
+      expect(column.tickets[0].title).toBe('First');
+      expect(column.tickets[1].title).toBe('Second');
+      expect(column.tickets[2].title).toBe('Third');
     });
   });
 
@@ -223,12 +226,13 @@ describe('Ticket API', () => {
 
       expect(res.body.position).toBe(0);
 
-      // Verify renumbering: t0→1, t1→2, t2→0
-      const tickets = await request(app.getHttpServer())
-        .get(`/api/columns/${testColumnId}/tickets`)
+      // Verify renumbering via board endpoint
+      const board = await request(app.getHttpServer())
+        .get(`/api/projects/${testProjectId}/board`)
         .expect(200);
 
-      const byId = (id: string) => tickets.body.find((t: any) => t.id === id);
+      const column = board.body.columns.find((c: any) => c.id === testColumnId);
+      const byId = (id: string) => column.tickets.find((t: any) => t.id === id);
       expect(byId(t2.body.id).position).toBe(0);
       expect(byId(t0.body.id).position).toBe(1);
       expect(byId(t1.body.id).position).toBe(2);
@@ -253,12 +257,13 @@ describe('Ticket API', () => {
 
       expect(res.body.position).toBe(2);
 
-      // Verify: t1 stays at 1, t0 goes to 2, t2 bumped to 3
-      const tickets = await request(app.getHttpServer())
-        .get(`/api/columns/${testColumnId}/tickets`)
+      // Verify via board endpoint
+      const board = await request(app.getHttpServer())
+        .get(`/api/projects/${testProjectId}/board`)
         .expect(200);
 
-      const byId = (id: string) => tickets.body.find((t: any) => t.id === id);
+      const column = board.body.columns.find((c: any) => c.id === testColumnId);
+      const byId = (id: string) => column.tickets.find((t: any) => t.id === id);
       expect(byId(t1.body.id).position).toBe(1);
       expect(byId(t0.body.id).position).toBe(2);
       expect(byId(t2.body.id).position).toBe(3);
@@ -287,13 +292,14 @@ describe('Ticket API', () => {
       expect(res.body.columnId).toBe(otherColumnId);
       expect(res.body.position).toBe(0);
 
-      // Verify target column tickets are renumbered
-      const targetTickets = await request(app.getHttpServer())
-        .get(`/api/columns/${otherColumnId}/tickets`)
+      // Verify target column tickets via board endpoint
+      const board = await request(app.getHttpServer())
+        .get(`/api/projects/${testProjectId}/board`)
         .expect(200);
 
-      expect(targetTickets.body).toHaveLength(3);
-      const byTitle = (t: string) => targetTickets.body.find((x: any) => x.title === t);
+      const targetColumn = board.body.columns.find((c: any) => c.id === otherColumnId);
+      expect(targetColumn.tickets).toHaveLength(3);
+      const byTitle = (t: string) => targetColumn.tickets.find((x: any) => x.title === t);
       expect(byTitle('Source').position).toBe(0);
       expect(byTitle('Target Pos 0').position).toBe(1);
       expect(byTitle('Target Pos 1').position).toBe(2);
@@ -336,12 +342,13 @@ describe('Ticket API', () => {
         .delete(`/api/tickets/${created.body.id}`)
         .expect(204);
 
-      // Verify ticket is gone (returns 404 from the GET endpoint)
-      const getRes = await request(app.getHttpServer())
-        .get(`/api/columns/${testColumnId}/tickets`)
+      // Verify ticket is gone via board endpoint
+      const board = await request(app.getHttpServer())
+        .get(`/api/projects/${testProjectId}/board`)
         .expect(200);
 
-      expect(getRes.body.find((t: any) => t.id === created.body.id)).toBeUndefined();
+      const column = board.body.columns.find((c: any) => c.id === testColumnId);
+      expect(column.tickets.find((t: any) => t.id === created.body.id)).toBeUndefined();
     });
 
     it('returns 404 when deleting non-existent ticket', async () => {
@@ -351,10 +358,10 @@ describe('Ticket API', () => {
     });
   });
 
-  // ── Ownership ───────────────────────────────────────────────────
+  // ── Authorization ───────────────────────────────────────────────
 
   describe('authorization', () => {
-    it('allows access to tickets from any project', async () => {
+    it('allows access to board from any project', async () => {
       const otherUser = await prisma.user.create({
         data: {
           email: 'other-ticket-test@test.com',
@@ -367,14 +374,16 @@ describe('Ticket API', () => {
         data: { ownerId: otherUser.id, name: 'Other Project' },
       });
 
-      const otherCol = await prisma.boardColumn.create({
+      await prisma.boardColumn.create({
         data: { projectId: otherProject.id, name: 'Other Col', order: 0 },
       });
 
-      // Our test user tries to get tickets from other user's column — now allowed
-      await request(app.getHttpServer())
-        .get(`/api/columns/${otherCol.id}/tickets`)
+      // Board endpoint uses project-level auth; no per-column ownership check
+      const board = await request(app.getHttpServer())
+        .get(`/api/projects/${otherProject.id}/board`)
         .expect(200);
+
+      expect(board.body.columns).toHaveLength(1);
 
       // Cleanup
       await prisma.user.delete({ where: { id: otherUser.id } }).catch(() => {});

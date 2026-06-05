@@ -87,7 +87,7 @@ describe('Project Effects', () => {
   });
 
   describe('selectProject$', () => {
-    it('should persist id to localStorage and dispatch clearBoard + loadColumns', () => {
+    it('should persist id to localStorage and dispatch clearBoard + loadBoard', () => {
       const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
       const actions$ = new Actions(of(ProjectActions.selectProject({ id: 'p-1' })));
 
@@ -97,7 +97,7 @@ describe('Project Effects', () => {
       expect(setItemSpy).toHaveBeenCalledWith('lastSelectedProjectId', 'p-1');
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual(BoardActions.clearBoard());
-      expect(result[1]).toEqual(BoardActions.loadColumns({ projectId: 'p-1' }));
+      expect(result[1]).toEqual(BoardActions.loadBoard({ projectId: 'p-1' }));
 
       setItemSpy.mockRestore();
     });

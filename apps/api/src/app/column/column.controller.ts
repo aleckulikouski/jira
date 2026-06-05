@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Patch, Delete, Param, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { RequestWithUser } from '../auth/auth.types';
 import { ColumnService } from './column.service';
@@ -9,12 +9,6 @@ import { ReorderColumnsDto } from './dto/reorder-columns.dto';
 @Controller()
 export class ColumnController {
   constructor(private readonly columnService: ColumnService) {}
-
-  @Get('projects/:projectId/columns')
-  @UseGuards(JwtAuthGuard)
-  async getForProject(@Param('projectId') projectId: string, @Request() req: RequestWithUser) {
-    return this.columnService.getForProject(projectId, req.user.id);
-  }
 
   @Post('projects/:projectId/columns')
   @UseGuards(JwtAuthGuard)

@@ -11,11 +11,12 @@ export const selectColumns = createSelector(selectBoardState, (s) => {
 export const selectBoardLoading = createSelector(selectBoardState, (s) => s.loading);
 export const selectBoardError = createSelector(selectBoardState, (s) => s.error);
 
-export const selectTickets = createSelector(selectBoardState, (s) => s.tickets);
+export const selectTickets = createSelector(selectBoardState, (s) =>
+  s.columns.flatMap((c) => c.tickets ?? []),
+);
 
 export const selectTicketsByColumn = (columnId: string) =>
-  createSelector(selectTickets, (tickets) =>
-    tickets
-      .filter((t) => t.columnId === columnId)
+  createSelector(selectBoardState, (s) =>
+    (s.columns.find((c) => c.id === columnId)?.tickets ?? [])
       .sort((a, b) => a.position - b.position),
   );

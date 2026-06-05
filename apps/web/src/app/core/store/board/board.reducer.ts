@@ -1,11 +1,10 @@
 import { createReducer, on } from '@ngrx/store';
-import type { BoardColumn, Ticket } from '@org/shared-types';
+import type { BoardColumn } from '@org/shared-types';
 import { BoardActions } from './board.actions';
 import { UserActions } from '../user/user.actions';
 
 export interface BoardState {
   columns: BoardColumn[];
-  tickets: Ticket[];
   loading: boolean;
   error: string | null;
   previousOrderedIds: string[] | null;
@@ -13,7 +12,6 @@ export interface BoardState {
 
 const initialState: BoardState = {
   columns: [],
-  tickets: [],
   loading: false,
   error: null,
   previousOrderedIds: null,
@@ -25,17 +23,17 @@ export const boardReducer = createReducer(
   on(UserActions.logout, () => initialState),
   on(BoardActions.clearBoard, () => initialState),
 
-  on(BoardActions.loadColumns, (state) => ({
+  on(BoardActions.loadBoard, (state) => ({
     ...state,
     loading: true,
     error: null,
   })),
-  on(BoardActions.loadColumnsSuccess, (state, { columns }) => ({
+  on(BoardActions.loadBoardSuccess, (state, { columns }) => ({
     ...state,
     columns,
     loading: false,
   })),
-  on(BoardActions.loadColumnsFailure, (state, { error }) => ({
+  on(BoardActions.loadBoardFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error,
@@ -45,9 +43,9 @@ export const boardReducer = createReducer(
     ...state,
     error: null,
   })),
-  on(BoardActions.addColumnSuccess, (state, { columns }) => ({
+  on(BoardActions.addColumnSuccess, (state, { column }) => ({
     ...state,
-    columns,
+    columns: [...state.columns, { ...column, tickets: [] }].sort((a, b) => a.order - b.order),
   })),
   on(BoardActions.addColumnFailure, (state, { error }) => ({
     ...state,
@@ -60,7 +58,7 @@ export const boardReducer = createReducer(
   })),
   on(BoardActions.updateColumnSuccess, (state, { column }) => ({
     ...state,
-    columns: state.columns.map((c) => (c.id === column.id ? column : c)),
+    columns: state.columns.map((c) => (c.id === column.id ? { ...column, tickets: c.tickets } : c)),
   })),
   on(BoardActions.updateColumnFailure, (state, { error }) => ({
     ...state,
@@ -74,25 +72,8 @@ export const boardReducer = createReducer(
   on(BoardActions.deleteColumnSuccess, (state, { id }) => ({
     ...state,
     columns: state.columns.filter((c) => c.id !== id),
-    tickets: state.tickets.filter((t) => t.columnId !== id),
   })),
   on(BoardActions.deleteColumnFailure, (state, { error }) => ({
-    ...state,
-    error,
-  })),
-
-  on(BoardActions.loadTickets, (state) => ({
-    ...state,
-    error: null,
-  })),
-  on(BoardActions.loadTicketsSuccess, (state, { columnId, tickets }) => ({
-    ...state,
-    tickets: [
-      ...state.tickets.filter((t) => t.columnId !== columnId),
-      ...tickets,
-    ],
-  })),
-  on(BoardActions.loadTicketsFailure, (state, { error }) => ({
     ...state,
     error,
   })),
@@ -100,27 +81,41 @@ export const boardReducer = createReducer(
   on(BoardActions.addTicket, (state, { columnId, title, description, tempId }) => ({
     ...state,
     error: null,
-    tickets: [
-      ...state.tickets,
-      {
-        id: tempId,
-        columnId,
-        title,
-        description: description ?? '',
-        position: -1,
-        assigneeId: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
+    columns: state.columns.map((c) =>
+      c.id === columnId
+        ? {
+            ...c,
+            tickets: [
+              ...(c.tickets ?? []),
+              {
+                id: tempId,
+                columnId,
+                title,
+                description: description ?? '',
+                position: 999999,
+                assigneeId: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+            ],
+          }
+        : c,
+    ),
   })),
   on(BoardActions.addTicketSuccess, (state, { ticket, tempId }) => ({
     ...state,
-    tickets: state.tickets.map((t) => (t.id === tempId ? ticket : t)),
+    columns: state.columns.map((c) =>
+      c.id === ticket.columnId
+        ? { ...c, tickets: (c.tickets ?? []).map((t) => (t.id === tempId ? ticket : t)) }
+        : c,
+    ),
   })),
   on(BoardActions.addTicketFailure, (state, { tempId, error }) => ({
     ...state,
-    tickets: state.tickets.filter((t) => t.id !== tempId),
+    columns: state.columns.map((c) => ({
+      ...c,
+      tickets: (c.tickets ?? []).filter((t) => t.id !== tempId),
+    })),
     error,
   })),
 
@@ -130,7 +125,13 @@ export const boardReducer = createReducer(
   })),
   on(BoardActions.updateTicketSuccess, (state, { ticket }) => ({
     ...state,
-    tickets: state.tickets.map((t) => (t.id === ticket.id ? ticket : t)),
+    columns: state.columns.map((c) => {
+      const filtered = (c.tickets ?? []).filter((t) => t.id !== ticket.id);
+      if (c.id === ticket.columnId) {
+        filtered.push(ticket);
+      }
+      return { ...c, tickets: filtered };
+    }),
   })),
   on(BoardActions.updateTicketFailure, (state, { error }) => ({
     ...state,
@@ -143,7 +144,10 @@ export const boardReducer = createReducer(
   })),
   on(BoardActions.deleteTicketSuccess, (state, { id }) => ({
     ...state,
-    tickets: state.tickets.filter((t) => t.id !== id),
+    columns: state.columns.map((c) => ({
+      ...c,
+      tickets: (c.tickets ?? []).filter((t) => t.id !== id),
+    })),
   })),
   on(BoardActions.deleteTicketFailure, (state, { error }) => ({
     ...state,
@@ -153,17 +157,42 @@ export const boardReducer = createReducer(
   on(BoardActions.moveTicket, (state, { id, columnId, position }) => ({
     ...state,
     error: null,
-    tickets: state.tickets.map((t) =>
-      t.id === id ? { ...t, columnId, position } : t,
-    ),
+    columns: state.columns.map((c) => {
+      // remove from source column
+      const tickets = (c.tickets ?? []).filter((t) => t.id !== id);
+      // add to target column at the correct position
+      if (c.id === columnId) {
+        const moved = state.columns.flatMap((col) => col.tickets ?? []).find((t) => t.id === id);
+        if (moved) {
+          const updated = { ...moved, columnId, position };
+          const insertAt = tickets.findIndex((t) => t.position > position);
+          if (insertAt === -1) {
+            tickets.push(updated);
+          } else {
+            tickets.splice(insertAt, 0, updated);
+          }
+        }
+      }
+      return { ...c, tickets };
+    }),
   })),
   on(BoardActions.moveTicketSuccess, (state, { ticket }) => ({
     ...state,
-    tickets: state.tickets.map((t) => (t.id === ticket.id ? ticket : t)),
+    columns: state.columns.map((c) => ({
+      ...c,
+      tickets: (c.tickets ?? []).map((t) => (t.id === ticket.id ? ticket : t)),
+    })),
   })),
   on(BoardActions.moveTicketFailure, (state, { ticket, error }) => ({
     ...state,
-    tickets: state.tickets.map((t) => (t.id === ticket.id ? { ...ticket } : t)),
+    columns: state.columns.map((c) => {
+      // roll back: remove from wherever it was moved to, re-add `ticket` (previous state) to its original column
+      const without = (c.tickets ?? []).filter((t) => t.id !== ticket.id);
+      if (c.id === ticket.columnId) {
+        without.push(ticket);
+      }
+      return { ...c, tickets: without };
+    }),
     error,
   })),
 

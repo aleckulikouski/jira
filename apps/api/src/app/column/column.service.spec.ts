@@ -174,18 +174,15 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 3, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValue([
-        ...allColumns,
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 3, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
       const result = await service.create('p-1', 'user-1', 'New Col');
 
       expect(tx.boardColumn.create).toHaveBeenCalledWith({
         data: { projectId: 'p-1', name: 'New Col', order: 3 },
       });
-      expect(result).toHaveLength(4);
-      expect(result[3].name).toBe('New Col');
+      expect(result.id).toBe('c-new');
+      expect(result.name).toBe('New Col');
+      expect(result.order).toBe(3);
     });
 
     it('appends with order 0 when no columns exist', async () => {
@@ -193,15 +190,13 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-first', projectId: 'p-1', name: 'First', order: 0, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValue([
-        { id: 'c-first', projectId: 'p-1', name: 'First', order: 0, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
-      await service.create('p-1', 'user-1', 'First');
+      const result = await service.create('p-1', 'user-1', 'First');
 
       expect(tx.boardColumn.create).toHaveBeenCalledWith({
         data: { projectId: 'p-1', name: 'First', order: 0 },
       });
+      expect(result.id).toBe('c-first');
     });
 
     it('inserts after target column when afterColumnId is provided', async () => {
@@ -212,12 +207,6 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 1, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValueOnce([
-        { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 1, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-2', projectId: 'p-1', name: 'In Progress', order: 2, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-3', projectId: 'p-1', name: 'Done', order: 3, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
       const result = await service.create('p-1', 'user-1', 'New Col', 'c-1');
 
@@ -228,8 +217,8 @@ describe('ColumnService', () => {
       expect(tx.boardColumn.create).toHaveBeenCalledWith({
         data: { projectId: 'p-1', name: 'New Col', order: 1 },
       });
-      expect(result).toHaveLength(4);
-      expect(result[1].order).toBe(1);
+      expect(result.id).toBe('c-new');
+      expect(result.order).toBe(1);
     });
 
     it('increments order of columns after the target', async () => {
@@ -243,12 +232,6 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 1, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValueOnce([
-        { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 1, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-2', projectId: 'p-1', name: 'In Progress', order: 2, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-3', projectId: 'p-1', name: 'Done', order: 3, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
       await service.create('p-1', 'user-1', 'New Col', 'c-1');
 
@@ -269,16 +252,13 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 6, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValue([...allColumns,
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 6, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
       const result = await service.create('p-1', 'user-1', 'New Col', 'stale-id');
 
       expect(tx.boardColumn.create).toHaveBeenCalledWith({
         data: { projectId: 'p-1', name: 'New Col', order: 6 },
       });
-      expect(result).toHaveLength(4);
+      expect(result.id).toBe('c-new');
     });
 
     it('falls back to append when afterColumnId belongs to a different project', async () => {
@@ -287,9 +267,6 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 4, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValue([...allColumns,
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 4, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
       await service.create('p-1', 'user-1', 'New Col', 'other-project-col');
 
@@ -302,26 +279,16 @@ describe('ColumnService', () => {
       });
     });
 
-    it('returns all columns sorted by order ascending', async () => {
+    it('returns the created column', async () => {
       tx.boardColumn.aggregate.mockResolvedValue({ _max: { order: 2 } });
-      tx.boardColumn.create.mockResolvedValue({
+      const created = {
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 3, createdAt: new Date(), updatedAt: new Date(),
-      });
-      const sortedColumns = [
-        { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-2', projectId: 'p-1', name: 'In Progress', order: 1, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-3', projectId: 'p-1', name: 'Done', order: 2, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 3, createdAt: new Date(), updatedAt: new Date() },
-      ];
-      tx.boardColumn.findMany.mockResolvedValue(sortedColumns);
+      };
+      tx.boardColumn.create.mockResolvedValue(created);
 
       const result = await service.create('p-1', 'user-1', 'New Col');
 
-      expect(tx.boardColumn.findMany).toHaveBeenCalledWith({
-        where: { projectId: 'p-1' },
-        orderBy: { order: 'asc' },
-      });
-      expect(result).toEqual(sortedColumns);
+      expect(result).toEqual(created);
     });
 
     it('inserts after the last column with correct trailing increment', async () => {
@@ -330,10 +297,6 @@ describe('ColumnService', () => {
       tx.boardColumn.create.mockResolvedValue({
         id: 'c-new', projectId: 'p-1', name: 'New Col', order: 3, createdAt: new Date(), updatedAt: new Date(),
       });
-      tx.boardColumn.findMany.mockResolvedValueOnce([
-        ...allColumns,
-        { id: 'c-new', projectId: 'p-1', name: 'New Col', order: 3, createdAt: new Date(), updatedAt: new Date() },
-      ]);
 
       await service.create('p-1', 'user-1', 'New Col', 'c-3');
 
@@ -345,7 +308,6 @@ describe('ColumnService', () => {
     it('verifies the user owns the project before creating', async () => {
       tx.boardColumn.aggregate.mockResolvedValue({ _max: { order: 0 } });
       tx.boardColumn.create.mockResolvedValue({ id: 'c-new', projectId: 'p-1', name: 'New Col', order: 1, createdAt: new Date(), updatedAt: new Date() });
-      tx.boardColumn.findMany.mockResolvedValue([{ id: 'c-new', projectId: 'p-1', name: 'New Col', order: 1, createdAt: new Date(), updatedAt: new Date() }]);
 
       await service.create('p-1', 'user-1', 'New Col');
 

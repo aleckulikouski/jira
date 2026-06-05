@@ -22,23 +22,21 @@ describe('ColumnController', () => {
 
   describe('create', () => {
     const mockUser = { id: 'user-1', email: 'test@test.com' };
-    const resultColumns = [
-      { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: new Date(), updatedAt: new Date() },
-    ];
+    const createdColumn = { id: 'c-1', projectId: 'p-1', name: 'To Do', order: 0, createdAt: new Date(), updatedAt: new Date() };
 
-    it('passes afterColumnId from DTO to service', async () => {
+    it('passes afterColumnId from DTO to service and returns single column', async () => {
       const dto = { name: 'New Col', afterColumnId: 'c-target' };
-      service.create.mockResolvedValue(resultColumns);
+      service.create.mockResolvedValue(createdColumn);
 
       const result = await controller.create('p-1', dto, { user: mockUser } as any);
 
       expect(service.create).toHaveBeenCalledWith('p-1', 'user-1', 'New Col', 'c-target');
-      expect(result).toEqual(resultColumns);
+      expect(result).toEqual(createdColumn);
     });
 
     it('omits afterColumnId when DTO field is absent', async () => {
       const dto = { name: 'New Col' } as any;
-      service.create.mockResolvedValue(resultColumns);
+      service.create.mockResolvedValue(createdColumn);
 
       await controller.create('p-1', dto, { user: mockUser } as any);
 

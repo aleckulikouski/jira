@@ -39,4 +39,14 @@ describe('BoardFacade', () => {
       );
     });
   });
+
+  describe('loadBoard', () => {
+    it('dispatches loadBoard action with projectId', () => {
+      facade.loadBoard('p-1');
+
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        BoardActions.loadBoard({ projectId: 'p-1' }),
+      );
+    });
+  });
 });

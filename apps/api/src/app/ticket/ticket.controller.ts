@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Patch, Delete, Param, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { RequestWithUser } from '../auth/auth.types';
 import { TicketService } from './ticket.service';
@@ -8,12 +8,6 @@ import { UpdateTicketDto } from './dto/update-ticket.dto';
 @Controller()
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
-
-  @Get('columns/:columnId/tickets')
-  @UseGuards(JwtAuthGuard)
-  async getForColumn(@Param('columnId') columnId: string, @Request() req: RequestWithUser) {
-    return this.ticketService.getForColumn(columnId, req.user.id);
-  }
 
   @Post('columns/:columnId/tickets')
   @UseGuards(JwtAuthGuard)

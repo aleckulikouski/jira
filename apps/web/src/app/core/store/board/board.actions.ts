@@ -5,12 +5,12 @@ import type { AddColumnData } from '../../interfaces/board.interface';
 export const BoardActions = createActionGroup({
   source: 'Board',
   events: {
-    'Load Columns': props<{ projectId: string }>(),
-    'Load Columns Success': props<{ columns: BoardColumn[] }>(),
-    'Load Columns Failure': props<{ error: string }>(),
+    'Load Board': props<{ projectId: string }>(),
+    'Load Board Success': props<{ columns: BoardColumn[] }>(),
+    'Load Board Failure': props<{ error: string }>(),
 
     'Add Column': props<AddColumnData>(),
-    'Add Column Success': props<{ columns: BoardColumn[] }>(),
+    'Add Column Success': props<{ column: BoardColumn }>(),
     'Add Column Failure': props<{ error: string }>(),
 
     'Update Column': props<{ id: string; data: { name?: string; order?: number } }>(),
@@ -20,10 +20,6 @@ export const BoardActions = createActionGroup({
     'Delete Column': props<{ id: string }>(),
     'Delete Column Success': props<{ id: string }>(),
     'Delete Column Failure': props<{ error: string }>(),
-
-    'Load Tickets': props<{ columnId: string }>(),
-    'Load Tickets Success': props<{ columnId: string; tickets: Ticket[] }>(),
-    'Load Tickets Failure': props<{ error: string }>(),
 
     'Add Ticket': props<{ columnId: string; title: string; description?: string; tempId: string }>(),
     'Add Ticket Success': props<{ ticket: Ticket; tempId: string }>(),

@@ -5,25 +5,16 @@ import { catchError, concatMap, map, mergeMap, of, switchMap, tap } from 'rxjs';
 import { BoardService } from '../../services/board.service';
 import { BoardActions } from './board.actions';
 
-export const loadTicketsAfterColumns$ = createEffect(
-  (actions$ = inject(Actions)) =>
-    actions$.pipe(
-      ofType(BoardActions.loadColumnsSuccess),
-      mergeMap(({ columns }) => columns.map((c) => BoardActions.loadTickets({ columnId: c.id }))),
-    ),
-  { functional: true },
-);
-
-export const loadColumns$ = createEffect(
+export const loadBoard$ = createEffect(
   (actions$ = inject(Actions), boardService = inject(BoardService)) =>
     actions$.pipe(
-      ofType(BoardActions.loadColumns),
+      ofType(BoardActions.loadBoard),
       switchMap(({ projectId }) =>
-        boardService.getColumns(projectId).pipe(
-          map((columns) => BoardActions.loadColumnsSuccess({ columns })),
+        boardService.getBoard(projectId).pipe(
+          map((board) => BoardActions.loadBoardSuccess({ columns: board.columns })),
           catchError((err) => {
-            const msg = err.error?.message ?? 'Failed to load columns';
-            return of(BoardActions.loadColumnsFailure({ error: msg }), BoardActions.showError({ message: msg }));
+            const msg = err.error?.message ?? 'Failed to load board';
+            return of(BoardActions.loadBoardFailure({ error: msg }), BoardActions.showError({ message: msg }));
           }),
         ),
       ),
@@ -37,9 +28,9 @@ export const addColumn$ = createEffect(
       ofType(BoardActions.addColumn),
       switchMap(({ projectId, name, afterColumnId }) =>
         boardService.createColumn(projectId, name, afterColumnId).pipe(
-          switchMap((columns) =>
+          switchMap((column) =>
             of(
-              BoardActions.addColumnSuccess({ columns }),
+              BoardActions.addColumnSuccess({ column }),
               BoardActions.showSuccess({ message: 'Column created' }),
             ),
           ),
@@ -90,23 +81,6 @@ export const deleteColumn$ = createEffect(
           catchError((err) => {
             const msg = err.error?.message ?? 'Failed to delete column';
             return of(BoardActions.deleteColumnFailure({ error: msg }), BoardActions.showError({ message: msg }));
-          }),
-        ),
-      ),
-    ),
-  { functional: true },
-);
-
-export const loadTickets$ = createEffect(
-  (actions$ = inject(Actions), boardService = inject(BoardService)) =>
-    actions$.pipe(
-      ofType(BoardActions.loadTickets),
-      mergeMap(({ columnId }) =>
-        boardService.getTickets(columnId).pipe(
-          map((tickets) => BoardActions.loadTicketsSuccess({ columnId, tickets })),
-          catchError((err) => {
-            const msg = err.error?.message ?? 'Failed to load tickets';
-            return of(BoardActions.loadTicketsFailure({ error: msg }), BoardActions.showError({ message: msg }));
           }),
         ),
       ),
