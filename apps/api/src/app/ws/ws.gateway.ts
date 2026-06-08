@@ -1,4 +1,4 @@
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, NotFoundException } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -11,7 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { WsJwtGuard } from './ws-jwt.guard';
-import { AuthorizationService } from '../auth/authorization.service';
+import { PrismaService } from '../prisma.service';
 import type { ServerToClientEvents } from '@org/shared-types';
 
 @WebSocketGateway({
@@ -24,7 +24,7 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(WsGateway.name);
 
-  constructor(private readonly authorizationService: AuthorizationService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   handleConnection(client: Socket): void {
     this.logger.log(`Client connected: ${client.id}`);
@@ -45,7 +45,10 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Verify project exists. Authorization is intentionally open —
     // any authenticated user can access any project, matching the
     // existing REST authorization model (see issue 038).
-    await this.authorizationService.project(data.projectId, userId);
+    const project = await this.prisma.project.findUnique({
+      where: { id: data.projectId },
+    });
+    if (!project) throw new NotFoundException('Project not found');
 
     const room = `project:${data.projectId}`;
     await client.join(room);
