@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ColumnController } from './column.controller';
 import { ColumnService } from './column.service';
 
@@ -14,7 +15,10 @@ describe('ColumnController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ColumnController],
-      providers: [{ provide: ColumnService, useValue: service }],
+      providers: [
+        { provide: ColumnService, useValue: service },
+        { provide: EventEmitter2, useValue: { emit: vi.fn() } },
+      ],
     }).compile();
 
     controller = module.get(ColumnController);

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, CanActivate, ExecutionContext, ValidationPipe } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import request from 'supertest';
 import { TicketModule } from './ticket.module';
 import { ProjectModule } from '../project/project.module';
@@ -84,7 +85,7 @@ describe('Ticket API', () => {
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [TicketModule, ProjectModule, PrismaModule],
+      imports: [EventEmitterModule.forRoot(), TicketModule, ProjectModule, PrismaModule],
       providers: [{ provide: PrismaService, useValue: prisma }],
     })
       .overrideGuard(JwtAuthGuard)

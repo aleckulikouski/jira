@@ -58,8 +58,9 @@ export class ColumnService {
     });
   }
 
-  async delete(columnId: string, userId: string) {
-    await this.auth.column(columnId, userId);
+  async delete(columnId: string, userId: string): Promise<{ projectId: string }> {
+    const column = await this.auth.column(columnId, userId);
+    const projectId = column.project.id;
 
     await this.prisma.$transaction(async (tx) => {
       const ticketCount = await tx.ticket.count({ where: { columnId } });
@@ -70,6 +71,8 @@ export class ColumnService {
       }
       await tx.boardColumn.delete({ where: { id: columnId } });
     });
+
+    return { projectId };
   }
 
   async reorder(projectId: string, userId: string, orderedIds: string[]) {

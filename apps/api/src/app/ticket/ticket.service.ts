@@ -25,6 +25,7 @@ export class TicketService {
         description: data.description ?? '',
         position: nextPosition,
       },
+      include: { column: { select: { projectId: true } } },
     });
   }
 
@@ -39,7 +40,11 @@ export class TicketService {
     const hasPositionChange = columnId !== undefined || position !== undefined;
 
     if (!hasPositionChange) {
-      return this.prisma.ticket.update({ where: { id: ticketId }, data: rest });
+      return this.prisma.ticket.update({
+        where: { id: ticketId },
+        data: rest,
+        include: { column: { select: { projectId: true } } },
+      });
     }
 
     const targetColumnId = columnId ?? ticket.columnId;
@@ -77,13 +82,16 @@ export class TicketService {
           ...(columnId !== undefined ? { columnId } : {}),
           position: targetPosition,
         },
+        include: { column: { select: { projectId: true } } },
       });
     });
   }
 
-  async delete(ticketId: string, userId: string) {
-    await this.auth.ticket(ticketId, userId);
+  async delete(ticketId: string, userId: string): Promise<{ projectId: string }> {
+    const ticket = await this.auth.ticket(ticketId, userId);
 
     await this.prisma.ticket.delete({ where: { id: ticketId } });
+
+    return { projectId: ticket.column.project.id };
   }
 }

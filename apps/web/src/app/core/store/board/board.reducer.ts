@@ -43,10 +43,14 @@ export const boardReducer = createReducer(
     ...state,
     error: null,
   })),
-  on(BoardActions.addColumnSuccess, (state, { column }) => ({
-    ...state,
-    columns: [...state.columns, { ...column, tickets: [] }].sort((a, b) => a.order - b.order),
-  })),
+  on(BoardActions.addColumnSuccess, (state, { column }) => {
+    // Idempotent: skip if already added (socket event may have arrived first)
+    if (state.columns.some((c) => c.id === column.id)) return state;
+    return {
+      ...state,
+      columns: [...state.columns, { ...column, tickets: [] }].sort((a, b) => a.order - b.order),
+    };
+  }),
   on(BoardActions.addColumnFailure, (state, { error }) => ({
     ...state,
     error,
@@ -102,14 +106,30 @@ export const boardReducer = createReducer(
         : c,
     ),
   })),
-  on(BoardActions.addTicketSuccess, (state, { ticket, tempId }) => ({
-    ...state,
-    columns: state.columns.map((c) =>
-      c.id === ticket.columnId
-        ? { ...c, tickets: (c.tickets ?? []).map((t) => (t.id === tempId ? ticket : t)) }
-        : c,
-    ),
-  })),
+  on(BoardActions.addTicketSuccess, (state, { ticket, tempId }) => {
+    // Idempotent: if the real ticket was already inserted by a socket event
+    // that arrived before the HTTP response, just clean up the optimistic stub.
+    const alreadyExists = state.columns.some((c) =>
+      (c.tickets ?? []).some((t) => t.id === ticket.id),
+    );
+    if (alreadyExists) {
+      return {
+        ...state,
+        columns: state.columns.map((c) => ({
+          ...c,
+          tickets: (c.tickets ?? []).filter((t) => t.id !== tempId),
+        })),
+      };
+    }
+    return {
+      ...state,
+      columns: state.columns.map((c) =>
+        c.id === ticket.columnId
+          ? { ...c, tickets: (c.tickets ?? []).map((t) => (t.id === tempId ? ticket : t)) }
+          : c,
+      ),
+    };
+  }),
   on(BoardActions.addTicketFailure, (state, { tempId, error }) => ({
     ...state,
     columns: state.columns.map((c) => ({
@@ -127,10 +147,18 @@ export const boardReducer = createReducer(
     ...state,
     columns: state.columns.map((c) => {
       const filtered = (c.tickets ?? []).filter((t) => t.id !== ticket.id);
-      if (c.id === ticket.columnId) {
-        filtered.push(ticket);
+      if (c.id !== ticket.columnId) return { ...c, tickets: filtered };
+
+      // Insert at position-sorted index rather than pushing to end,
+      // so the array stays ordered even before the selector re-sorts.
+      const insertAt = filtered.findIndex((t) => t.position >= ticket.position);
+      const updated = [...filtered];
+      if (insertAt === -1) {
+        updated.push(ticket);
+      } else {
+        updated.splice(insertAt, 0, ticket);
       }
-      return { ...c, tickets: filtered };
+      return { ...c, tickets: updated };
     }),
   })),
   on(BoardActions.updateTicketFailure, (state, { error }) => ({
@@ -165,7 +193,7 @@ export const boardReducer = createReducer(
         const moved = state.columns.flatMap((col) => col.tickets ?? []).find((t) => t.id === id);
         if (moved) {
           const updated = { ...moved, columnId, position };
-          const insertAt = tickets.findIndex((t) => t.position > position);
+          const insertAt = tickets.findIndex((t) => t.position >= position);
           if (insertAt === -1) {
             tickets.push(updated);
           } else {
@@ -195,6 +223,46 @@ export const boardReducer = createReducer(
     }),
     error,
   })),
+
+  on(BoardActions.ticketCreatedExternally, (state, { ticket }) => {
+    // Idempotent: skip if ticket ID already exists (socket arrived after HTTP)
+    const exists = state.columns.some((c) => (c.tickets ?? []).some((t) => t.id === ticket.id));
+    if (exists) return state;
+
+    return {
+      ...state,
+      columns: state.columns.map((c) => {
+        if (c.id !== ticket.columnId) return c;
+        // Remove the optimistic stub (matching title) so the real external
+        // ticket replaces it immediately — no duplicate flicker while
+        // waiting for the HTTP response to swap the tempId.
+        const pruned = (c.tickets ?? []).filter(
+          (t) => t.id !== ticket.id && t.title !== ticket.title,
+        );
+        return { ...c, tickets: [...pruned, ticket] };
+      }),
+    };
+  }),
+
+  on(BoardActions.columnCreatedExternally, (state, { column }) => {
+    // Idempotent: skip if column ID already exists (handles self-sender echo)
+    if (state.columns.some((c) => c.id === column.id)) return state;
+
+    return {
+      ...state,
+      columns: [...state.columns, { ...column, tickets: [] }].sort((a, b) => a.order - b.order),
+    };
+  }),
+
+  on(BoardActions.columnsReorderedExternally, (state, { orderedIds }) => {
+    const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
+    return {
+      ...state,
+      columns: state.columns
+        .map((c) => ({ ...c, order: orderMap.get(c.id) ?? c.order }))
+        .sort((a, b) => a.order - b.order),
+    };
+  }),
 
   on(BoardActions.reorderColumns, (state, { orderedIds, previousOrderedIds }) => {
     const orderMap = new Map(orderedIds.map((id, i) => [id, i]));

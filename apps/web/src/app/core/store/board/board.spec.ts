@@ -194,6 +194,88 @@ describe('Board Reducer - Tickets (nested)', () => {
       expect(col1.tickets!.find((t) => t.id === 't-1')).toBeUndefined();
     });
 
+    it('should position-insert ticket within same column', () => {
+      // Column with tickets at positions 0, 1000, 2000
+      const cols = [makeColumn({
+        id: 'c-1',
+        tickets: [
+          makeTicket({ id: 'a', position: 0 }),
+          makeTicket({ id: 'b', position: 1000 }),
+          makeTicket({ id: 'c', position: 2000 }),
+        ],
+      })];
+      const s: BoardState = { columns: cols, loading: false, error: null, previousOrderedIds: null };
+      const previous = makeTicket({ id: 'c', columnId: 'c-1', position: 2000 });
+
+      const state = boardReducer(s, BoardActions.moveTicket({ id: 'c', columnId: 'c-1', position: 500, previous }));
+
+      const tickets = state.columns[0].tickets!;
+      expect(tickets.map((t) => t.id)).toEqual(['a', 'c', 'b']);
+      expect(tickets.find((t) => t.id === 'c')!.position).toBe(500);
+    });
+
+    it('should position-insert when moving to a different column', () => {
+      const a = makeColumn({ id: 'A', tickets: [makeTicket({ id: 'x', position: 0 })] });
+      const b = makeColumn({ id: 'B', tickets: [
+        makeTicket({ id: 'y', position: 0 }),
+        makeTicket({ id: 'z', position: 1000 }),
+      ]});
+      const s: BoardState = { columns: [a, b], loading: false, error: null, previousOrderedIds: null };
+      const previous = makeTicket({ id: 'x', columnId: 'A', position: 0 });
+
+      const state = boardReducer(s, BoardActions.moveTicket({ id: 'x', columnId: 'B', position: 500, previous }));
+
+      // x should be removed from A
+      expect(state.columns[0].tickets).toHaveLength(0);
+      // x should be inserted between y and z in B
+      expect(state.columns[1].tickets!.map((t) => t.id)).toEqual(['y', 'x', 'z']);
+    });
+
+    it('should place ticket at the top when moving to position 0', () => {
+      const cols = [makeColumn({
+        id: 'c-1',
+        tickets: [
+          makeTicket({ id: 'a', position: 0 }),
+          makeTicket({ id: 'b', position: 1000 }),
+        ],
+      })];
+      const s: BoardState = { columns: cols, loading: false, error: null, previousOrderedIds: null };
+      const previous = makeTicket({ id: 'b', columnId: 'c-1', position: 1000 });
+
+      const state = boardReducer(s, BoardActions.moveTicket({ id: 'b', columnId: 'c-1', position: 0, previous }));
+
+      // b should now be first, before a
+      expect(state.columns[0].tickets!.map((t) => t.id)).toEqual(['b', 'a']);
+      expect(state.columns[0].tickets!.find((t) => t.id === 'b')!.position).toBe(0);
+      expect(state.columns[0].tickets!.find((t) => t.id === 'a')!.position).toBe(0);
+    });
+
+    it('should produce correct final state through full drag-drop flow with socket race', () => {
+      // Simulate: user drags ticket from A to B, socket event arrives before HTTP response
+      const a = makeColumn({ id: 'A', tickets: [makeTicket({ id: 'x', position: 0 })] });
+      const b = makeColumn({ id: 'B', tickets: [
+        makeTicket({ id: 'y', position: 0 }),
+        makeTicket({ id: 'z', position: 1000 }),
+      ]});
+      const s: BoardState = { columns: [a, b], loading: false, error: null, previousOrderedIds: null };
+      const previous = makeTicket({ id: 'x', columnId: 'A', position: 0 });
+
+      // 1. Optimistic move
+      let state = boardReducer(s, BoardActions.moveTicket({ id: 'x', columnId: 'B', position: 500, previous }));
+
+      // 2. Socket event fires (arrives before HTTP)
+      const serverTicket = makeTicket({ id: 'x', columnId: 'B', position: 500 });
+      state = boardReducer(state, BoardActions.updateTicketSuccess({ ticket: serverTicket }));
+
+      // 3. HTTP response arrives
+      state = boardReducer(state, BoardActions.moveTicketSuccess({ ticket: serverTicket }));
+
+      // Final: ticket x should be in column B, between y and z
+      expect(state.columns[0].tickets).toHaveLength(0);
+      expect(state.columns[1].tickets!.map((t) => t.id)).toEqual(['y', 'x', 'z']);
+      expect(state.columns[1].tickets!.find((t) => t.id === 'x')!.position).toBe(500);
+    });
+
     it('should replace ticket with server data on moveTicketSuccess', () => {
       const serverTicket = makeTicket({ id: 't-1', columnId: 'c-2', position: 3, title: 'Server Title' });
       const state = boardReducer(initial, BoardActions.moveTicketSuccess({ ticket: serverTicket }));
@@ -333,6 +415,98 @@ describe('Board Reducer - Tickets (nested)', () => {
       };
       const state = boardReducer(populated, UserActions.logout());
       expect(state.columns).toEqual([]);
+    });
+  });
+
+  describe('ticketCreatedExternally', () => {
+    const threeCols = [makeColumn({ id: 'c-1', tickets: [makeTicket(), makeTicket({ id: 't-2', position: 1 })] }), makeColumn({ id: 'c-2', tickets: [] }), makeColumn({ id: 'c-3', tickets: [] })];
+    const state: BoardState = { columns: threeCols, loading: false, error: null, previousOrderedIds: null };
+
+    it('should append the ticket to the target column', () => {
+      const s = boardReducer(
+        state,
+        BoardActions.ticketCreatedExternally({
+          ticket: makeTicket({ id: 't-ext', title: 'External', columnId: 'c-1' }),
+        }),
+      );
+      const col = s.columns.find((c) => c.id === 'c-1')!;
+      expect(col.tickets).toHaveLength(3);
+      expect(col.tickets!.find((t) => t.id === 't-ext')).toBeDefined();
+    });
+
+    it('should skip when ticket ID already exists (self-sender dedup)', () => {
+      const s = boardReducer(
+        state,
+        BoardActions.ticketCreatedExternally({
+          ticket: makeTicket({ id: 't-1', title: 'Duplicate' }),
+        }),
+      );
+      expect(s).toBe(state);
+    });
+
+    it('should skip when target column does not exist', () => {
+      const s = boardReducer(
+        { columns: [], loading: false, error: null, previousOrderedIds: null },
+        BoardActions.ticketCreatedExternally({
+          ticket: makeTicket({ id: 't-ghost', columnId: 'no-such-col' }),
+        }),
+      );
+      expect(s.columns).toHaveLength(0);
+    });
+  });
+
+  describe('columnCreatedExternally', () => {
+    const threeCols = [makeColumn({ id: 'c-1' }), makeColumn({ id: 'c-2', order: 1 }), makeColumn({ id: 'c-3', order: 2 })];
+    const state: BoardState = { columns: threeCols, loading: false, error: null, previousOrderedIds: null };
+
+    it('should append the column and sort by order', () => {
+      const s = boardReducer(
+        state,
+        BoardActions.columnCreatedExternally({
+          column: makeColumn({ id: 'c-4', name: 'External', order: 5 }),
+        }),
+      );
+      expect(s.columns).toHaveLength(4);
+      expect(s.columns.find((c) => c.id === 'c-4')).toBeDefined();
+      expect(s.columns.map((c) => c.id)).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
+    });
+
+    it('should skip when column ID already exists (self-sender dedup)', () => {
+      const s = boardReducer(
+        state,
+        BoardActions.columnCreatedExternally({
+          column: makeColumn({ id: 'c-1', name: 'Duplicate' }),
+        }),
+      );
+      expect(s).toBe(state);
+    });
+  });
+
+  describe('columnsReorderedExternally', () => {
+    const threeCols = [makeColumn({ id: 'c-1', order: 0 }), makeColumn({ id: 'c-2', order: 1 }), makeColumn({ id: 'c-3', order: 2 })];
+    const state: BoardState = { columns: threeCols, loading: false, error: null, previousOrderedIds: null };
+
+    it('should reorder columns by orderedIds', () => {
+      const s = boardReducer(
+        state,
+        BoardActions.columnsReorderedExternally({
+          orderedIds: ['c-3', 'c-1', 'c-2'],
+        }),
+      );
+      expect(s.columns.map((c) => c.id)).toEqual(['c-3', 'c-1', 'c-2']);
+      expect(s.columns.find((c) => c.id === 'c-3')!.order).toBe(0);
+      expect(s.columns.find((c) => c.id === 'c-1')!.order).toBe(1);
+      expect(s.columns.find((c) => c.id === 'c-2')!.order).toBe(2);
+    });
+
+    it('should leave previousOrderedIds null (no effect trigger)', () => {
+      const s = boardReducer(
+        state,
+        BoardActions.columnsReorderedExternally({
+          orderedIds: ['c-2', 'c-1', 'c-3'],
+        }),
+      );
+      expect(s.previousOrderedIds).toBeNull();
     });
   });
 });

@@ -42,3 +42,19 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string;
 }
+
+export type {
+  ColumnCreatedPayload,
+  ColumnUpdatedPayload,
+  ColumnDeletedPayload,
+  TicketCreatedPayload,
+  TicketUpdatedPayload,
+  TicketDeletedPayload,
+  ColumnsReorderedPayload,
+  DomainEvents,
+} from './lib/domain-events.js';
+
+export type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+} from './lib/socket-events.js';

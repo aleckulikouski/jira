@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { UserService } from '../../services/user.service';
+import { WsService } from '../../services/ws.service';
 import { UserActions } from './user.actions';
 import { Router } from '@angular/router';
 import { TokenStorage } from '../../tokens/token-storage';
@@ -95,6 +96,24 @@ export const persistProfileUpdate$ = createEffect(
       tap(({ user }) => {
         localStorage.setItem('user', JSON.stringify(user));
       }),
+    ),
+  { functional: true, dispatch: false },
+);
+
+export const connectWs$ = createEffect(
+  (actions$ = inject(Actions), wsService = inject(WsService)) =>
+    actions$.pipe(
+      ofType(UserActions.loginSuccess, UserActions.registerSuccess),
+      tap(({ accessToken }) => wsService.connect(accessToken)),
+    ),
+  { functional: true, dispatch: false },
+);
+
+export const disconnectWs$ = createEffect(
+  (actions$ = inject(Actions), wsService = inject(WsService)) =>
+    actions$.pipe(
+      ofType(UserActions.logout),
+      tap(() => wsService.disconnect()),
     ),
   { functional: true, dispatch: false },
 );

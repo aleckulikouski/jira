@@ -16,7 +16,12 @@ export const selectTickets = createSelector(selectBoardState, (s) =>
 );
 
 export const selectTicketsByColumn = (columnId: string) =>
-  createSelector(selectBoardState, (s) =>
-    (s.columns.find((c) => c.id === columnId)?.tickets ?? [])
-      .sort((a, b) => a.position - b.position),
+  createSelector(selectBoardState, (s) => {
+    const tickets = s.columns.find((c) => c.id === columnId)?.tickets ?? [];
+    return [...tickets].sort((a, b) => a.position - b.position);
+  });
+
+export const selectTicketById = (ticketId: string) =>
+  createSelector(selectTickets, (tickets) =>
+    tickets.find((t) => t.id === ticketId),
   );

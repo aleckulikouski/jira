@@ -13,6 +13,7 @@ import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder, CdkDragDrop } 
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { map, Observable, take, shareReplay } from 'rxjs';
 import { BoardFacade } from '../../core/store/board/board.facade';
+import { WsService } from '../../core/services/ws.service';
 import { ProjectSelectorComponent } from '../../core/components/project-selector/project-selector.component';
 import { ColumnEditorDialogComponent } from './column-editor-dialog/column-editor-dialog.component';
 import type { ColumnEditorDialogResult } from '../../core/interfaces/column-editor-dialog.interface';
@@ -47,6 +48,7 @@ export class BoardComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly wsService = inject(WsService);
 
   columnDropListIds: string[] = [];
 
@@ -64,6 +66,14 @@ export class BoardComponent {
   constructor() {
     this.board.columns$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((cols) => {
       this.columnDropListIds = cols.map((c) => c.id);
+    });
+
+    // Join socket.io room whenever the project route param changes
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const id = params.get('id');
+      if (id) {
+        this.wsService.setCurrentProject(id);
+      }
     });
   }
 

@@ -9,6 +9,9 @@ import { of } from 'rxjs';
 import { BoardComponent } from './board.component';
 import { BoardFacade } from '../../core/store/board/board.facade';
 import { ProjectFacade } from '../../core/store/project/project.facade';
+import { WsService } from '../../core/services/ws.service';
+import { TokenStorage } from '../../core/tokens/token-storage';
+import { Store } from '@ngrx/store';
 import type { BoardColumn, Ticket } from '@org/shared-types';
 
 function makeColumn(overrides?: Partial<BoardColumn>): BoardColumn {
@@ -95,6 +98,23 @@ describe('BoardComponent', () => {
         {
           provide: MatSnackBar,
           useValue: { open: vi.fn() },
+        },
+        {
+          provide: WsService,
+          useValue: {
+            setCurrentProject: vi.fn(),
+            setBoardLoaded: vi.fn(),
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+          },
+        },
+        {
+          provide: TokenStorage,
+          useValue: { get: vi.fn().mockReturnValue(null), set: vi.fn(), remove: vi.fn() },
+        },
+        {
+          provide: Store,
+          useValue: { dispatch: vi.fn(), select: vi.fn().mockReturnValue(of(null)) },
         },
       ],
     })

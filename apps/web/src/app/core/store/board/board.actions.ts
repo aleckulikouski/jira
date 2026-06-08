@@ -41,6 +41,10 @@ export const BoardActions = createActionGroup({
     'Reorder Columns Success': emptyProps(),
     'Reorder Columns Failure': props<{ previousOrderedIds: string[]; error: string }>(),
 
+    'Ticket Created Externally': props<{ ticket: Ticket }>(),
+    'Column Created Externally': props<{ column: BoardColumn }>(),
+    'Columns Reordered Externally': props<{ orderedIds: string[] }>(),
+
     'Clear Board': emptyProps(),
 
     'Show Success': props<{ message: string }>(),

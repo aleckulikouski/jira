@@ -3,6 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, concatMap, map, mergeMap, of, switchMap, tap } from 'rxjs';
 import { BoardService } from '../../services/board.service';
+import { WsService } from '../../services/ws.service';
 import { BoardActions } from './board.actions';
 
 export const loadBoard$ = createEffect(
@@ -173,6 +174,15 @@ export const showError$ = createEffect(
     actions$.pipe(
       ofType(BoardActions.showError),
       tap(({ message }) => snackBar.open(message, 'Close', { duration: 5000 })),
+    ),
+  { functional: true, dispatch: false },
+);
+
+export const markBoardLoaded$ = createEffect(
+  (actions$ = inject(Actions), wsService = inject(WsService)) =>
+    actions$.pipe(
+      ofType(BoardActions.loadBoardSuccess),
+      tap(() => wsService.setBoardLoaded()),
     ),
   { functional: true, dispatch: false },
 );
